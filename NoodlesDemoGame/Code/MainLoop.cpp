@@ -14,17 +14,18 @@ struct DefaultNoodleContext : public Context
 	void SubContextRef() const override {}
 };
 
-struct TopFormEventResponder : public Dumpling::FormEventResponder
+struct TopFormEventResponder : public Dumpling::FormEventCapture
 {
-	void AddFormEventResponderRef() const override {}
-	void SubFormEventResponderRef() const override {}
-	FormEventRespond Respond(Form& interface, FormEvent event) override
+	void AddFormEventCaptureRef() const override {}
+	void SubFormEventCaptureRef() const override {}
+	FormEvent::Category AcceptedCategory() const override { return FormEvent::Category::MODIFY; }
+	FormEvent::Respond Receive(Form& interface, FormEvent::Modify event) override
 	{
-		if(event.message == FormEventEnum::DESTROY)
+		if(event.message == decltype(event.message)::DESTROY)
 		{
 			Form::PostFormQuitEvent();
 		}
-		return FormEventRespond::Default;
+		return FormEvent::Respond::PASS;
 	}
 };
 
@@ -35,7 +36,8 @@ int main()
 	DefaultNoodleContext n_context;
 
 	TopFormEventResponder respond;
-	auto form = Form::Create(&respond);
+	auto form = Form::Create();
+	form->InsertCapture(&respond);
 
 	FormProperty pro;
 	pro.title = u8"NoodlesDemoGame";
@@ -55,13 +57,12 @@ int main()
 		[](Noodles::ExecuteContext& ex_context)
 		{
 			while(
-				Form::PeekMessageEventOnce([&](Form*, FormEvent event, FormEventRespond)
+				Form::PeekMessageEventOnce([&](FormEvent::System event)
 					{
-						if(event.message == FormEventEnum::QUIT)
+						if(event.message == FormEvent::System::Message::QUIT)
 						{
 							ex_context.noodles_context.Quit();
 						}
-						return FormEventRespond::Default;
 					}
 				)
 				)
