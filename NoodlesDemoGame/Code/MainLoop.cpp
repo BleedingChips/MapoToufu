@@ -2,105 +2,42 @@ import std;
 import Potato;
 import Dumpling;
 import Noodles;
+import FormManager;
+import RendererManager;
+import Scene;
 
-using namespace Potato;
-using namespace Dumpling;
-using namespace Noodles;
-
-
-struct DefaultNoodleContext : public Context
-{
-	void AddContextRef() const override {}
-	void SubContextRef() const override {}
-};
-
-struct TopFormEventResponder : public Dumpling::FormEventCapture
-{
-	void AddFormEventCaptureRef() const override {}
-	void SubFormEventCaptureRef() const override {}
-	FormEvent::Category AcceptedCategory() const override { return FormEvent::Category::MODIFY; }
-	FormEvent::Respond Receive(Form& interface, FormEvent::Modify event) override
-	{
-		if(event.message == decltype(event.message)::DESTROY)
-		{
-			Form::PostFormQuitEvent();
-		}
-		return FormEvent::Respond::PASS;
-	}
-};
 
 
 int main()
 {
 
-	DefaultNoodleContext n_context;
+	auto scene = Scene::Create();
+	auto top_form = CreateTopForm();
 
-	TopFormEventResponder respond;
-	auto form = Form::Create();
-	form->InsertCapture(&respond);
-
-	FormProperty pro;
+	FormInitProperty pro;
 	pro.title = u8"NoodlesDemoGame";
 
-
-	Task::TaskContext context;
+	Potato::Task::TaskContext context;
 
 	context.AddGroupThread({1}, 1);
 	auto requireID = context.GetRandomThreadIDFromGroup(1);
-	std::promise<void> pro1;
 
-	auto fur1 = pro1.get_future();
+	auto fu = InitForm(*top_form, context, *requireID, pro);
 
-	Task::TaskFilter filter{Task::Priority::High, Task::Category::THREAD_TASK, 0, *requireID};
+	auto val = fu.get();
 
-	n_context.CreateAndAddAtomaticSystem(
-		[](Noodles::ExecuteContext& ex_context)
-		{
-			while(
-				Form::PeekMessageEventOnce([&](FormEvent::System event)
-					{
-						if(event.message == FormEvent::System::Message::QUIT)
-						{
-							ex_context.noodles_context.Quit();
-						}
-					}
-				)
-				)
-				{
-					
-				}
-		},
-		SystemNodeProperty{
-			Priority{},
-			Property{u8"form_message", u8"gro"},
-			nullptr,
-			filter
-		}
-	);
+	auto hard_device = Dumpling::HardDevice::Create();
+	auto renderer = Dumpling::Renderer::Create();
 
-	auto init_task = Task::Task::CreateLambdaTask([&](Task::ExecuteStatus& status, Task::Task::Ptr)
-	{
-		form->Init(pro);
-		pro1.set_value();
-	});
+	auto form_wrapper = renderer->CreateFormWrapper(*hard_device, *top_form);
 
-	context.CommitTask(init_task, Task::TaskProperty{
-		u8"init form",
-		{},
-		filter
-	});
+	RegisterFormMessageSystem(*scene, *requireID, {0, 1, 0});
 
-	fur1.get();
-
-	n_context.Commited(context, {});
+	scene->Commited(context, {});
 
 	context.ProcessTaskUntillNoExitsTask({});
 	
 	
-
-	return 0;
-
-
 
 	return 0;
 }

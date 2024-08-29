@@ -10,6 +10,8 @@ end
 target("NoodlesDemoGame")
     set_kind("binary")
     add_files("NoodlesDemoGame/Code/*.cpp")
+    add_files("NoodlesDemoGame/Code/*/*.ixx")
+    add_files("NoodlesDemoGame/Code/*/*.cpp")
     add_deps("Potato")
     add_deps("Noodles")
     add_deps("Dumpling")
