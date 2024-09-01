@@ -20,6 +20,7 @@ int main()
 	Potato::Task::TaskContext context;
 
 	context.AddGroupThread({1}, 1);
+	context.AddGroupThread({2}, 6);
 	auto requireID = context.GetRandomThreadIDFromGroup(1);
 
 	auto fu = InitForm(*top_form, context, *requireID, pro);
@@ -32,6 +33,13 @@ int main()
 	auto form_wrapper = renderer->CreateFormWrapper(*hard_device, *top_form);
 
 	RegisterFormMessageSystem(*scene, *requireID, {0, 1, 0});
+
+	scene->CreateAndAddTickedAutomaticSystem(
+		[=](SceneContext& context){
+			std::cout << "sdasdasd" << std::endl;
+		},
+		{u8"123"}
+	);
 
 	scene->Commited(context, {});
 
