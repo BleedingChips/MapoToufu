@@ -67,7 +67,7 @@ Noodles::SystemNode::Ptr RegisterFormMessageSystem(Scene& scene, std::thread::id
 			filter
 		};
 		auto sys = scene.CreateAutomaticSystem(
-			[](SceneContext& context){
+			[](SceneWrapper& context){
 				while(
 					Dumpling::Form::PeekMessageEventOnce([&](Dumpling::FormEvent::System event)
 						{

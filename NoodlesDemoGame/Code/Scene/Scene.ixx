@@ -7,15 +7,8 @@ export import PotatoIR;
 
 export
 {
-	struct SceneContext
-	{
-		SceneContext(Noodles::ExecuteContext& context)
-			: noodles_context(context.noodles_context){}
-		SceneContext(SceneContext const&) = default;
-		void Quit() { noodles_context.Quit(); }
-	protected:
-		Noodles::Context& noodles_context;
-	};
+
+	using SceneWrapper = Noodles::ContextWrapper;
 
 
 	struct Scene : public Noodles::Context, public Potato::IR::MemoryResourceRecordIntrusiveInterface

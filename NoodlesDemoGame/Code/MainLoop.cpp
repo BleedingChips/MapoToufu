@@ -35,7 +35,7 @@ int main()
 	RegisterFormMessageSystem(*scene, *requireID, {0, 1, 0});
 
 	scene->CreateAndAddTickedAutomaticSystem(
-		[=](SceneContext& context){
+		[=](SceneWrapper& context){
 			std::cout << "sdasdasd" << std::endl;
 		},
 		{u8"123"}
