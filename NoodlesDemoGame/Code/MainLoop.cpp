@@ -5,7 +5,7 @@ import Noodles;
 import FormManager;
 import RendererManager;
 import Scene;
-
+import DumplingImGui;
 
 
 int main()
@@ -27,10 +27,12 @@ int main()
 
 	auto val = fu.get();
 
-	auto hard_device = Dumpling::HardDevice::Create();
-	auto renderer = Dumpling::Renderer::Create();
+	auto hard_device = Dumpling::Device::Create();
 
-	auto form_wrapper = renderer->CreateFormWrapper(*hard_device, *top_form);
+
+	auto form_wrapper = hard_device->CreateFormWrapper(*top_form);
+
+	Dumpling::InitImGui(*hard_device);
 
 	RegisterFormMessageSystem(*scene, *requireID, {0, 1, 0});
 
