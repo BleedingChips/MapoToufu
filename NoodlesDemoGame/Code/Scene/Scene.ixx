@@ -2,8 +2,10 @@ module;
 
 export module Scene;
 
+import std;
 export import NoodlesContext;
 export import PotatoIR;
+export import PotatoPointer;
 
 export
 {

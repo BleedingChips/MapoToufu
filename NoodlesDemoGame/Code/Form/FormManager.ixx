@@ -2,6 +2,7 @@ module;
 
 export module FormManager;
 
+import std;
 export import Scene;
 export import Potato;
 export import Dumpling;
@@ -15,7 +16,7 @@ export{
 		Potato::Task::Priority priority = Potato::Task::Priority::Normal;
 	};
 
-	std::future<bool> InitForm(Dumpling::Form& target_format,  Potato::Task::TaskContext& context, std::thread::id require_thread_id, FormInitProperty property = {}, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
+	std::future<bool> InitFormInThread(Dumpling::Form& target_format,  Potato::Task::TaskContext& context, std::thread::id require_thread_id, FormInitProperty property = {}, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
 
 	struct MessageLoopInitProperty
 	{
@@ -23,6 +24,6 @@ export{
 		Potato::Task::Priority priority = Potato::Task::Priority::Normal;
 	};
 
-	Noodles::SystemNode::Ptr RegisterFormMessageSystem(Scene& scene, std::thread::id id, Noodles::Priority priority, MessageLoopInitProperty property = {}, Noodles::OrderFunction fun = nullptr, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
+	Noodles::SystemNode::Ptr RegisterFormMessageSystemInThread(Scene& scene, std::thread::id id, Noodles::Priority priority, MessageLoopInitProperty property = {}, Noodles::OrderFunction fun = nullptr, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
 
 };

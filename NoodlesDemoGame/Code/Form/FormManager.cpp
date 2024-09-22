@@ -3,12 +3,15 @@ module;
 #include <cassert>
 
 module FormManager;
+import std;
 
 struct TopFormEventResponder : public Dumpling::FormEventCapture
 {
 	void AddFormEventCaptureRef() const override {}
 	void SubFormEventCaptureRef() const override {}
-	Dumpling::FormEvent::Category AcceptedCategory() const override { return Dumpling::FormEvent::Category::MODIFY; }
+
+	TopFormEventResponder() : FormEventCapture(Dumpling::FormEvent::Category::MODIFY) {}
+
 	Dumpling::FormEvent::Respond Receive(Dumpling::Form& interface, Dumpling::FormEvent::Modify event) override
 	{
 		if(event.message == decltype(event.message)::DESTROY)
@@ -29,7 +32,7 @@ Dumpling::Form::Ptr CreateTopForm(std::size_t identity, std::pmr::memory_resourc
 	return ptr;
 }
 
-std::future<bool> InitForm(Dumpling::Form& target_format,  Potato::Task::TaskContext& context, std::thread::id require_thread_id, FormInitProperty property, std::pmr::memory_resource* resource)
+std::future<bool> InitFormInThread(Dumpling::Form& target_format,  Potato::Task::TaskContext& context, std::thread::id require_thread_id, FormInitProperty property, std::pmr::memory_resource* resource)
 {
 	std::promise<bool> promise;
 	auto future = promise.get_future();
@@ -56,7 +59,7 @@ std::future<bool> InitForm(Dumpling::Form& target_format,  Potato::Task::TaskCon
 	return future;
 }
 
-Noodles::SystemNode::Ptr RegisterFormMessageSystem(Scene& scene, std::thread::id require_thread_id, Noodles::Priority priority, MessageLoopInitProperty property, Noodles::OrderFunction fun, std::pmr::memory_resource* resource)
+Noodles::SystemNode::Ptr RegisterFormMessageSystemInThread(Scene& scene, std::thread::id require_thread_id, Noodles::Priority priority, MessageLoopInitProperty property, Noodles::OrderFunction fun, std::pmr::memory_resource* resource)
 {
 	if(require_thread_id != std::thread::id{})
 	{
