@@ -40,7 +40,7 @@ std::future<bool> InitFormInThread(Dumpling::Form& target_format,  Potato::Task:
 		form = Dumpling::Form::Ptr{&target_format}, 
 		pro = std::move(promise), 
 		property
-	](Potato::Task::ExecuteStatus& status, Potato::Task::Task& self) mutable {
+	](Potato::Task::TaskContextWrapper& status, Potato::Task::Task& self) mutable {
 		pro.set_value(form->Init(property));
 	}, resource);
 	if(!task)
@@ -59,36 +59,38 @@ std::future<bool> InitFormInThread(Dumpling::Form& target_format,  Potato::Task:
 	return future;
 }
 
-Noodles::SystemNode::Ptr RegisterFormMessageSystemInThread(Scene& scene, std::thread::id require_thread_id, Noodles::Priority priority, MessageLoopInitProperty property, Noodles::OrderFunction fun, std::pmr::memory_resource* resource)
+bool CommitedFormMessageLoop(Scene::Ptr reference_scene, Potato::Task::TaskContext& context, std::thread::id id, MessageLoopInitProperty property, std::pmr::memory_resource* resource)
 {
-	if(require_thread_id != std::thread::id{})
+	auto task = Potato::Task::Task::CreateLambdaTask([reference_scene, property](Potato::Task::TaskContextWrapper& wrapper, Potato::Task::Task& this_task)
 	{
-		Potato::Task::TaskFilter filter{property.priority, Potato::Task::Category::THREAD_TASK, 0, require_thread_id};
-		Potato::Task::TaskProperty task_property{
-			property.name.name,
-			{},
-			filter
-		};
-		auto sys = scene.CreateAutomaticSystem(
-			[](SceneWrapper& context){
-				while(
-					Dumpling::Form::PeekMessageEventOnce([&](Dumpling::FormEvent::System event)
-						{
-							if(event.message == Dumpling::FormEvent::System::Message::QUIT)
-							{
-								context.Quit();
-							}
-						}
-					)
-					)
+		bool NeedExit = false;
+		while(
+			Dumpling::Form::PeekMessageEventOnce([&](Dumpling::FormEvent::System event)
+				{
+					if(event.message == Dumpling::FormEvent::System::Message::QUIT)
 					{
-					
+						if(reference_scene)
+						{
+							reference_scene->Quit();
+							NeedExit = true;
+						}
 					}
-			}, {u8"FormMessageLoop"}, resource
-		);
-		auto re = scene.AddTickedSystemNode(*sys, {priority, fun, filter});
-		assert(re);
-		return sys;
-	}
-	return {};
+				}
+			)
+		)
+		{
+		
+		}
+		if(!NeedExit)
+		{
+			wrapper.context.CommitDelayTask(&this_task, property.duration_time, wrapper.task_property);
+		}
+	}, resource);
+	Potato::Task::TaskFilter filter{property.priority, Potato::Task::Category::THREAD_TASK, 0, id};
+	Potato::Task::TaskProperty task_property{
+		property.name.name,
+		{},
+		filter
+	};
+	return context.CommitTask(std::move(task), task_property);
 }

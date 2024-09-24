@@ -22,8 +22,8 @@ export{
 	{
 		Noodles::SystemName name = {u8"Form Message Loop"};
 		Potato::Task::Priority priority = Potato::Task::Priority::Normal;
+		std::chrono::steady_clock::duration duration_time = std::chrono::microseconds{1};
 	};
 
-	Noodles::SystemNode::Ptr RegisterFormMessageSystemInThread(Scene& scene, std::thread::id id, Noodles::Priority priority, MessageLoopInitProperty property = {}, Noodles::OrderFunction fun = nullptr, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
-
+	bool CommitedFormMessageLoop(Scene::Ptr reference_scene, Potato::Task::TaskContext& context, std::thread::id id, MessageLoopInitProperty property = {}, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
 };

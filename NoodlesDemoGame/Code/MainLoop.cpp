@@ -10,9 +10,30 @@ import Scene;
 import DumplingImGui;
 
 
+struct A {};
+struct B {};
+
+
+std::mutex P;
+
+struct Printer
+{
+	char const* Str = nullptr;
+	Printer(char const* Str) : Str(Str)
+	{
+		std::lock_guard lg(P);
+		std::cout << Str << std::endl;
+	}
+	~Printer()
+	{
+		std::lock_guard lg(P);
+		std::cout << Str << std::endl;
+	}
+};
+
 int main()
 {
-
+	Dumpling::Device::InitDebugLayer();
 	auto scene = Scene::Create();
 	auto top_form = CreateTopForm();
 
@@ -35,59 +56,72 @@ int main()
 	auto form_wrapper = hard_device->CreateFormWrapper(*top_form);
 	auto frame_renderer = hard_device->CreateFrameRenderer();
 
+	form_wrapper->LogicPresent();
+
 	Dumpling::InitImGui(*hard_device);
 
-	RegisterFormMessageSystemInThread(*scene, *requireID, {0, 1, 0});
+	CommitedFormMessageLoop(scene, context, *requireID);
 
 	Dumpling::Color color {0.0f, 0.0f, 0.0f, 1.0f};
-	std::chrono::steady_clock::time_point tp = std::chrono::steady_clock::now();
+
+	auto Fun = [](float color, float speed, float time) -> float
+	{
+		return std::fmod(color + speed * time, 2.0f);
+	};
 
 	scene->CreateAndAddTickedAutomaticSystem(
-		[&](SceneWrapper& context)
+		[&](SceneWrapper& context, Noodles::AtomicUserModify<A>)
 		{
-			color.R +=  0.001f * context.GetContext().GetFramedDurationInSecond();
-			color.G +=  0.0015f * context.GetContext().GetFramedDurationInSecond();
-			color.B +=  0.002f * context.GetContext().GetFramedDurationInSecond();
+			Printer P{"Pass"};
+			color.R =  Fun(color.R, 0.2f, context.GetContext().GetFramedDurationInSecond());
+			color.G =  Fun(color.G, 0.3f, context.GetContext().GetFramedDurationInSecond());
+			color.B =  Fun(color.B, 0.4f, context.GetContext().GetFramedDurationInSecond());
+
+			Dumpling::Color new_color {color};
+
+			new_color.R = std::abs(new_color.R - 1.0f);
+			new_color.G = std::abs(new_color.G - 1.0f);
+			new_color.B = std::abs(new_color.B - 1.0f);
+
 			Dumpling::PassRenderer render;
 			frame_renderer->PopPassRenderer(render);
-			render.ClearRendererTarget(*form_wrapper, color);
+			render.ClearRendererTarget(*form_wrapper, new_color);
 			frame_renderer->FinishPassRenderer(render);
-			auto new_frame = frame_renderer->CommitFrame();
-			assert(new_frame.has_value());
-			form_wrapper->LogicalNextFrame();
 		},
-		{u8"Clear"}
+		{u8"Pass"}, {0, 1, 0}
 	);
 
-	std::size_t frame_index = 0;
+	std::size_t frame_index = frame_renderer->GetCurrentFrame();
 
 	scene->CreateAndAddTickedAutomaticSystem(
-		[&](SceneWrapper& context, std::size_t current_frame)
+		[&](SceneWrapper& context, Noodles::AtomicUserModify<B>)
 		{
+			Printer P{"Flush"};
 			while(true)
 			{
-				auto index = frame_renderer->TryFlushFrame();
-				if(index >= frame_index)
+				auto flush_frame = frame_renderer->TryFlushFrame();
+				if(flush_frame >= frame_index)
 				{
-					if(frame_index != 0)
-					{
-						form_wrapper->Present();
-					}
-					++frame_index;
 					break;
 				}else
 				{
-					std::this_thread::sleep_for(std::chrono::microseconds{10});
+					std::this_thread::sleep_for(std::chrono::microseconds{1});
 				}
 			}
-		}, {u8"flush"}
+			
+			form_wrapper->Present();
+		},
+		{u8"Flush"}, {0, 1, 0}
 	);
 
 	scene->CreateAndAddTickedAutomaticSystem(
-		[=](SceneWrapper& context){
-			std::cout << "sdasdasd" << std::endl;
+		[&](SceneWrapper& context, Noodles::AtomicUserModify<A>, Noodles::AtomicUserModify<B>)
+		{
+			Printer P{"Commited"};
+			frame_index = *frame_renderer->CommitFrame();
+			form_wrapper->LogicPresent();
 		},
-		{u8"123"}
+		{u8"Commited"}, {0, 0, 0}
 	);
 
 	scene->Commited(context, {});
