@@ -1,4 +1,5 @@
 #include <cassert>
+#include "d3d12.h"
 
 import std;
 import Potato;
@@ -58,7 +59,8 @@ int main()
 
 	form_wrapper->LogicPresent();
 
-	Dumpling::InitImGui(*hard_device);
+	auto im_context = Dumpling::ImGuiContext::Create(*hard_device);
+	auto im_form_wrapper = im_context->CreateFormWrapper(*top_form);
 
 	CommitedFormMessageLoop(scene, context, *requireID);
 
@@ -86,6 +88,50 @@ int main()
 			Dumpling::PassRenderer render;
 			frame_renderer->PopPassRenderer(render);
 			render.ClearRendererTarget(*form_wrapper, new_color);
+			im_context->StartFrame();
+			im_form_wrapper->StartFrame();
+			im_form_wrapper->EndFrame();
+			im_context->EndFrame();
+			
+
+			auto desc = form_wrapper->GetDescription(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
+			if(desc.resource_ptr)
+			{
+				if(desc.default_state != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET)
+				{
+					D3D12_RESOURCE_BARRIER barrier{
+						D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
+						D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE,
+						D3D12_RESOURCE_TRANSITION_BARRIER{
+							desc.resource_ptr.Get(),
+							D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
+							desc.default_state,
+							D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET
+						}
+					};
+					render->ResourceBarrier(1, &barrier);
+				}
+				render->OMSetRenderTargets(1, &(desc.cpu_handle), false, nullptr);
+				auto heap = im_context->GetHeap();
+				render->SetDescriptorHeaps(1, &heap);
+				im_context->Commited(render);
+
+
+				if(desc.default_state != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET)
+				{
+					D3D12_RESOURCE_BARRIER barrier{
+						D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
+						D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE,
+						D3D12_RESOURCE_TRANSITION_BARRIER{
+							desc.resource_ptr.Get(),
+							D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
+							D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET,
+							desc.default_state
+						}
+					};
+					render->ResourceBarrier(1, &barrier);
+				}
+			}
 			frame_renderer->FinishPassRenderer(render);
 		},
 		{u8"Pass"}, {0, 1, 0}
