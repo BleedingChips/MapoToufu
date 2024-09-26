@@ -59,8 +59,7 @@ int main()
 
 	form_wrapper->LogicPresent();
 
-	auto im_context = Dumpling::ImGuiContext::Create(*hard_device);
-	auto im_form_wrapper = im_context->CreateFormWrapper(*top_form);
+	auto im_context = Dumpling::Gui::CreateHUD(*top_form, *hard_device, Dumpling::Gui::Widget::DemoWidget());
 
 	CommitedFormMessageLoop(scene, context, *requireID);
 
@@ -88,10 +87,6 @@ int main()
 			Dumpling::PassRenderer render;
 			frame_renderer->PopPassRenderer(render);
 			render.ClearRendererTarget(*form_wrapper, new_color);
-			im_context->StartFrame();
-			im_form_wrapper->StartFrame();
-			im_form_wrapper->EndFrame();
-			im_context->EndFrame();
 			
 
 			auto desc = form_wrapper->GetDescription(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -112,8 +107,8 @@ int main()
 					render->ResourceBarrier(1, &barrier);
 				}
 				render->OMSetRenderTargets(1, &(desc.cpu_handle), false, nullptr);
-				auto heap = im_context->GetHeap();
-				render->SetDescriptorHeaps(1, &heap);
+
+				//render->SetDescriptorHeaps(1, &heap);
 				im_context->Commited(render);
 
 
