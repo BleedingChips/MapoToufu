@@ -86,47 +86,13 @@ int main()
 
 			Dumpling::PassRenderer render;
 			frame_renderer->PopPassRenderer(render);
-			render.ClearRendererTarget(*form_wrapper, new_color);
-			
 
-			auto desc = form_wrapper->GetDescription(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
-			if(desc.resource_ptr)
-			{
-				if(desc.default_state != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET)
-				{
-					D3D12_RESOURCE_BARRIER barrier{
-						D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
-						D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE,
-						D3D12_RESOURCE_TRANSITION_BARRIER{
-							desc.resource_ptr.Get(),
-							D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
-							desc.default_state,
-							D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET
-						}
-					};
-					render->ResourceBarrier(1, &barrier);
-				}
-				render->OMSetRenderTargets(1, &(desc.cpu_handle), false, nullptr);
+			Dumpling::RendererTargetCarrier carrier;
+			carrier.AddRenderTarget(*form_wrapper);
 
-				//render->SetDescriptorHeaps(1, &heap);
-				im_context->Commited(render);
-
-
-				if(desc.default_state != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET)
-				{
-					D3D12_RESOURCE_BARRIER barrier{
-						D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
-						D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE,
-						D3D12_RESOURCE_TRANSITION_BARRIER{
-							desc.resource_ptr.Get(),
-							D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
-							D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET,
-							desc.default_state
-						}
-					};
-					render->ResourceBarrier(1, &barrier);
-				}
-			}
+			render.SetRenderTargets(carrier);
+			render.ClearRendererTarget(carrier, 0, new_color);
+			im_context->Commited(render);
 			frame_renderer->FinishPassRenderer(render);
 		},
 		{u8"Pass"}, {0, 1, 0}
@@ -138,17 +104,8 @@ int main()
 		[&](SceneWrapper& context, Noodles::AtomicUserModify<B>)
 		{
 			Printer P{"Flush"};
-			while(true)
-			{
-				auto flush_frame = frame_renderer->TryFlushFrame();
-				if(flush_frame >= frame_index)
-				{
-					break;
-				}else
-				{
-					std::this_thread::sleep_for(std::chrono::microseconds{1});
-				}
-			}
+
+			frame_renderer->FlushToLastFrame(std::chrono::microseconds{1});
 			
 			form_wrapper->Present();
 		},
@@ -169,7 +126,7 @@ int main()
 
 	context.ProcessTaskUntillNoExitsTask({});
 	
-	
+	frame_renderer->FlushToLastFrame();
 
 	return 0;
 }

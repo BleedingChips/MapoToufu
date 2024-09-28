@@ -53,7 +53,7 @@ std::future<bool> InitFormInThread(Dumpling::Form& target_format,  Potato::Task:
 			{},
 			filter
 		};
-		auto re = context.CommitTask(std::move(task), task_property);
+		auto re = context.CommitDelayTask(std::move(task), std::chrono::microseconds{10}, task_property);
 		assert(re);
 	}
 	return future;
