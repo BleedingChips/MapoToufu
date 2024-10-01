@@ -9,7 +9,7 @@ import FormManager;
 import RendererManager;
 import Scene;
 import DumplingImGui;
-
+import DumplingHLSLComplier;
 
 struct A {};
 struct B {};
