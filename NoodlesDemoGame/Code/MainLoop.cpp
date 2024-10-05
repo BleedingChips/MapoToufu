@@ -59,7 +59,7 @@ int main()
 
 	form_wrapper->LogicPresent();
 
-	auto im_context = Dumpling::Gui::CreateHUD(*top_form, *hard_device, Dumpling::Gui::Widget::DemoWidget());
+	auto im_context = Dumpling::Gui::CreateHUD(*top_form, *hard_device, Dumpling::Gui::Widget::GetDemoWidget());
 
 	CommitedFormMessageLoop(scene, context, *requireID);
 
@@ -69,6 +69,8 @@ int main()
 	{
 		return std::fmod(color + speed * time, 2.0f);
 	};
+
+	auto shader_context = Dumpling::HLSLCompiler::Context::Create();
 
 	scene->CreateAndAddTickedAutomaticSystem(
 		[&](SceneWrapper& context, Noodles::AtomicUserModify<A>)
