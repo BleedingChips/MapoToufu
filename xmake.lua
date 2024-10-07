@@ -7,14 +7,23 @@ if os.scriptdir() == os.projectdir() then
     includes("../Dumpling/")
 end
 
-target("NoodlesDemoGame")
-    set_kind("binary")
-    add_files("NoodlesDemoGame/Code/*.cpp")
-    add_files("NoodlesDemoGame/Code/*/*.ixx")
-    add_files("NoodlesDemoGame/Code/*/*.cpp")
+target("MapoToufu")
+    set_kind("static")
+    add_files("MapoToufu/*.cpp")
+    add_files("MapoToufu/*.ixx")
     add_deps("Potato")
     add_deps("Noodles")
     add_deps("Dumpling")
     add_deps("DumplingImGui")
     add_deps("DumplingHLSLComplier")
 target_end()
+
+
+if os.scriptdir() == os.projectdir() then
+    set_project("MapoToufuDemo")
+    target("MapoToufuDemo")
+        set_kind("binary")
+        add_files("Demos/StartupDemo/*.cpp")
+        add_deps("MapoToufu")
+    target_end()
+end 
