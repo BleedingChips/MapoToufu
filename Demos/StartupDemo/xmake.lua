@@ -1,5 +1,6 @@
-set_project("MapoToufuDemo")
+set_project("StartupDemo")
 target("StartupDemo")
+    set_targetdir("Binary/$(mode)/$(arch)")
     set_kind("binary")
     add_files("*.cpp")
     add_deps("MapoToufu")

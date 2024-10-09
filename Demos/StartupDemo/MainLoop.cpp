@@ -22,13 +22,13 @@ struct Printer
 	char const* Str = nullptr;
 	Printer(char const* Str) : Str(Str)
 	{
-		std::lock_guard lg(P);
-		std::cout << Str << std::endl;
+		//std::lock_guard lg(P);
+		//std::cout << Str << std::endl;
 	}
 	~Printer()
 	{
-		std::lock_guard lg(P);
-		std::cout << Str << std::endl;
+		//std::lock_guard lg(P);
+		//std::cout << Str << std::endl;
 	}
 };
 
@@ -71,6 +71,32 @@ int main()
 	};
 
 	auto shader_context = Dumpling::HLSLCompiler::Context::Create();
+
+	std::cout << std::filesystem::current_path() << std::endl;
+
+	auto tar = Potato::Path::ReverseRecursiveSearchDirectory(L"Content");
+	std::filesystem::current_path(tar);
+
+
+	std::cout << std::filesystem::current_path() << std::endl;
+
+	Potato::Document::ImmediateReader reader(L"Material/TestShader.raw_shader");
+	auto str = reader.TryCastU8();
+
+	Dumpling::HLSLCompiler::Target vs_target
+	{
+		Dumpling::HLSLCompiler::Target::VS,
+		u8"VS"
+	};
+
+	Dumpling::HLSLCompiler::Target ps_target
+	{
+		Dumpling::HLSLCompiler::Target::PS,
+		u8"PS"
+	};
+
+	auto i = shader_context->Compile(*str, vs_target);
+	auto p = shader_context->Compile(*str, ps_target);
 
 	scene->CreateAndAddTickedAutomaticSystem(
 		[&](SceneWrapper& context, Noodles::AtomicUserModify<A>)

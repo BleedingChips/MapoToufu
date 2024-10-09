@@ -437,3 +437,6 @@ out/*
 .xmake
 build/*
 vsxmake*/
+
+# imgui
+imgui.ini
