@@ -124,6 +124,14 @@ int main()
 		{u8"Commited"}, {0, 0, 0}
 	);
 
+	auto tem = scene->CreateAutomaticSystemTemplate([]()
+	{
+		Printer P{"FuckYou"};
+	});
+
+	auto node = scene->CreateSystem(*tem, {u8"Fcck"});
+	scene->AddTickedSystemNode(*node, { });
+
 	scene->Commited(context, {});
 
 	context.ProcessTaskUntillNoExitsTask({});

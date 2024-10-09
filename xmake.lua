@@ -20,10 +20,5 @@ target_end()
 
 
 if os.scriptdir() == os.projectdir() then
-    set_project("MapoToufuDemo")
-    target("MapoToufuDemo")
-        set_kind("binary")
-        add_files("Demos/StartupDemo/*.cpp")
-        add_deps("MapoToufu")
-    target_end()
+    includes("Demos/StartupDemo/")
 end 
