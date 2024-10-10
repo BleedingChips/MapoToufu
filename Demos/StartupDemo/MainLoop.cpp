@@ -80,23 +80,40 @@ int main()
 
 	std::cout << std::filesystem::current_path() << std::endl;
 
-	Potato::Document::ImmediateReader reader(L"Material/TestShader.raw_shader");
-	auto str = reader.TryCastU8();
+	std::pmr::u8string code;
+
+	{
+		Potato::Document::BinaryStreamReader reader2(L"Material/TestShader.raw_shader");
+		auto str = reader2.GetStreamSize();
+		std::vector<std::byte> tar;
+		tar.resize(str);
+		reader2.Read(std::span(tar));
+
+		auto re = Potato::Document::StringSerializer::SerializeToBomAndString(std::span(tar), code);
+
+		volatile int i = 0;
+	}
+	
+
 
 	Dumpling::HLSLCompiler::Target vs_target
 	{
 		Dumpling::HLSLCompiler::Target::VS,
-		u8"VS"
+		u8"VS",
+		u8"FuckYou"
 	};
 
 	Dumpling::HLSLCompiler::Target ps_target
 	{
-		Dumpling::HLSLCompiler::Target::PS,
-		u8"PS"
+		Dumpling::HLSLCompiler::Target::VS,
+		u8"PS",
+		u8"FuckYou"
 	};
 
-	auto i = shader_context->Compile(*str, vs_target);
-	auto p = shader_context->Compile(*str, ps_target);
+	auto i = shader_context->Compile(code, vs_target);
+	auto error = i.GetErrorMessage();
+	auto p = shader_context->Compile(code, ps_target);
+	auto error2 = p.GetErrorMessage();
 
 	scene->CreateAndAddTickedAutomaticSystem(
 		[&](SceneWrapper& context, Noodles::AtomicUserModify<A>)
