@@ -122,11 +122,11 @@ int main()
 			Dumpling::PassRenderer render;
 			frame_renderer->PopPassRenderer(render);
 
-			Dumpling::RendererTargetCarrier carrier;
+			Dumpling::RenderTargetSet carrier;
 			carrier.AddRenderTarget(*form_wrapper);
 
 			render.SetRenderTargets(carrier);
-			render.ClearRendererTarget(carrier, 0, new_color);
+			render.ClearRendererTarget(0, new_color);
 			im_context->Commited(render);
 			frame_renderer->FinishPassRenderer(render);
 		},
