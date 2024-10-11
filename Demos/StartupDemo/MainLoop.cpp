@@ -1,5 +1,4 @@
 #include <cassert>
-#include "d3d12.h"
 
 import std;
 import Potato;
@@ -80,39 +79,30 @@ int main()
 
 	std::cout << std::filesystem::current_path() << std::endl;
 
-	std::pmr::u8string code;
-
-	{
-		Potato::Document::BinaryStreamReader reader2(L"Material/TestShader.raw_shader");
-		auto str = reader2.GetStreamSize();
-		std::vector<std::byte> tar;
-		tar.resize(str);
-		reader2.Read(std::span(tar));
-
-		auto re = Potato::Document::StringSerializer::SerializeToBomAndString(std::span(tar), code);
-
-		volatile int i = 0;
-	}
-	
-
+	Potato::Document::BinaryStreamReader reader2(L"Material/TestShader.raw_shader");
+	auto stream_size = reader2.GetStreamSize();
+	std::vector<std::byte> temp{stream_size};
+	reader2.Read(std::span(temp));
+	auto ite_str = std::span(temp);
+	Potato::Document::StringSerializer serializer;
+	auto ite_str2 = serializer.ConsumeBom(ite_str);
+	auto code = *serializer.TryDirectCastToStringView<char8_t>(ite_str2);
 
 	Dumpling::HLSLCompiler::Target vs_target
 	{
 		Dumpling::HLSLCompiler::Target::VS,
-		u8"VS",
-		u8"FuckYou"
+		u8"VS"
 	};
 
 	Dumpling::HLSLCompiler::Target ps_target
 	{
 		Dumpling::HLSLCompiler::Target::VS,
-		u8"PS",
-		u8"FuckYou"
+		u8"PS"
 	};
 
-	auto i = shader_context->Compile(code, vs_target);
+	auto i = shader_context->Compile(code, vs_target, u8"F11");
 	auto error = i.GetErrorMessage();
-	auto p = shader_context->Compile(code, ps_target);
+	auto p = shader_context->Compile(code, ps_target, u8"F22");
 	auto error2 = p.GetErrorMessage();
 
 	scene->CreateAndAddTickedAutomaticSystem(
