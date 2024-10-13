@@ -1,29 +1,47 @@
 module;
 
-export module FormManager;
+export module MapoToufuForm;
 
 import std;
-export import Scene;
-export import Potato;
-export import Dumpling;
+import Scene;
+import Potato;
+import Dumpling;
+import DumplingImGui;
 
 
-export{
-	Dumpling::Form::Ptr CreateTopForm(std::size_t identity = 0, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
-	
-	struct FormInitProperty : Dumpling::FormProperty
+export namespace MapoToufu
+{
+	using Dumpling::Form;
+	using Dumpling::FormWrapper;
+	using Dumpling::FormEventCapture;
+	using Dumpling::Device;
+	using Dumpling::Gui::HeadUpDisplay;
+	using Dumpling::Gui::Widget;
+
+	using Noodles::SystemName;
+
+	struct FormProperty : public Dumpling::FormProperty
 	{
-		Potato::Task::Priority priority = Potato::Task::Priority::Normal;
+		Widget::Ptr widget;
+		FormEventCapture::Ptr capture;
 	};
 
-	std::future<bool> InitFormInThread(Dumpling::Form& target_format,  Potato::Task::TaskContext& context, std::thread::id require_thread_id, FormInitProperty property = {}, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
+	struct FormTuple
+	{
+		Form::Ptr form;
+		FormWrapper::Ptr wrapper;
+		HeadUpDisplay::Ptr hud;
+	};
+
+	std::future<FormTuple> CreateForm(Potato::Task::TaskContext& context, FormProperty property, Device& device,  std::thread::id thread_id, bool IsTopForm = true, std::size_t identity = 0, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
 
 	struct MessageLoopInitProperty
 	{
 		Noodles::SystemName name = {u8"Form Message Loop"};
 		Potato::Task::Priority priority = Potato::Task::Priority::Normal;
-		std::chrono::steady_clock::duration duration_time = std::chrono::microseconds{1};
 	};
 
 	bool CommitedFormMessageLoop(Scene::Ptr reference_scene, Potato::Task::TaskContext& context, std::thread::id id, MessageLoopInitProperty property = {}, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
-};
+
+
+}

@@ -4,7 +4,7 @@ import std;
 import Potato;
 import Dumpling;
 import Noodles;
-import FormManager;
+import MapoToufuForm;
 import RendererManager;
 import Scene;
 import DumplingImGui;
@@ -35,32 +35,26 @@ int main()
 {
 	Dumpling::Device::InitDebugLayer();
 	auto scene = Scene::Create();
-	auto top_form = CreateTopForm();
-
-	FormInitProperty pro;
-	pro.title = u8"NoodlesDemoGame";
 
 	Potato::Task::TaskContext context;
+	auto hard_device = Dumpling::Device::Create();
 
 	context.AddGroupThread({1}, 1);
 	context.AddGroupThread({2}, 6);
-	auto requireID = context.GetRandomThreadIDFromGroup(1);
+	auto requireID = *context.GetRandomThreadIDFromGroup(1);
 
-	auto fu = InitFormInThread(*top_form, context, *requireID, pro);
+	MapoToufu::CommitedFormMessageLoop(scene, context, requireID);
 
-	auto val = fu.get();
+	MapoToufu::FormProperty property;
+	property.title = u8"NoodlesDemoGame";
+	property.widget = MapoToufu::Widget::GetDemoWidget();
 
-	auto hard_device = Dumpling::Device::Create();
+	auto form_future = MapoToufu::CreateForm(context, property, *hard_device, requireID);
+	auto form = form_future.get();
 
-
-	auto form_wrapper = hard_device->CreateFormWrapper(*top_form);
 	auto frame_renderer = hard_device->CreateFrameRenderer();
 
-	form_wrapper->LogicPresent();
-
-	auto im_context = Dumpling::Gui::CreateHUD(*top_form, *hard_device, Dumpling::Gui::Widget::GetDemoWidget());
-
-	CommitedFormMessageLoop(scene, context, *requireID);
+	form.wrapper->LogicPresent();
 
 	Dumpling::Color color {0.0f, 0.0f, 0.0f, 1.0f};
 
@@ -123,11 +117,11 @@ int main()
 			frame_renderer->PopPassRenderer(render);
 
 			Dumpling::RenderTargetSet carrier;
-			carrier.AddRenderTarget(*form_wrapper);
+			carrier.AddRenderTarget(*form.wrapper);
 
 			render.SetRenderTargets(carrier);
 			render.ClearRendererTarget(0, new_color);
-			im_context->Commited(render);
+			form.hud->Commited(render);
 			frame_renderer->FinishPassRenderer(render);
 		},
 		{u8"Pass"}, {0, 1, 0}
@@ -142,7 +136,7 @@ int main()
 
 			frame_renderer->FlushToLastFrame(std::chrono::microseconds{1});
 			
-			form_wrapper->Present();
+			form.wrapper->Present();
 		},
 		{u8"Flush"}, {0, 1, 0}
 	);
@@ -152,7 +146,7 @@ int main()
 		{
 			Printer P{"Commited"};
 			frame_index = *frame_renderer->CommitFrame();
-			form_wrapper->LogicPresent();
+			form.wrapper->LogicPresent();
 		},
 		{u8"Commited"}, {0, 0, 0}
 	);
