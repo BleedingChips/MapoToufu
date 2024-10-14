@@ -10,7 +10,7 @@ end
 target("MapoToufu")
     set_kind("static")
     add_files("MapoToufu/*.cpp")
-    add_files("MapoToufu/*.ixx")
+    add_files("MapoToufu/*.ixx", {public=true})
     add_deps("Potato")
     add_deps("Noodles")
     add_deps("Dumpling")
