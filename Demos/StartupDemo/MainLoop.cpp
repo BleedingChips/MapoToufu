@@ -100,7 +100,7 @@ int main()
 	auto error2 = p.GetErrorMessage();
 
 	scene->CreateAndAddTickedAutomaticSystem(
-		[&](SceneWrapper& context, Noodles::AtomicUserModify<A>)
+		[&](SceneWrapper& context, Noodles::AtomicThreadOrder<A>)
 		{
 			Printer P{"Pass"};
 			color.R =  Fun(color.R, 0.2f, context.GetContext().GetFramedDurationInSecond());
@@ -130,7 +130,7 @@ int main()
 	std::size_t frame_index = frame_renderer->GetCurrentFrame();
 
 	scene->CreateAndAddTickedAutomaticSystem(
-		[&](SceneWrapper& context, Noodles::AtomicUserModify<B>)
+		[&](SceneWrapper& context, Noodles::AtomicThreadOrder<B>)
 		{
 			Printer P{"Flush"};
 
@@ -142,7 +142,7 @@ int main()
 	);
 
 	scene->CreateAndAddTickedAutomaticSystem(
-		[&](SceneWrapper& context, Noodles::AtomicUserModify<A>, Noodles::AtomicUserModify<B>)
+		[&](SceneWrapper& context, Noodles::AtomicThreadOrder<A, B>)
 		{
 			Printer P{"Commited"};
 			frame_index = *frame_renderer->CommitFrame();
@@ -156,8 +156,8 @@ int main()
 		Printer P{"FuckYou"};
 	});
 
-	auto node = scene->CreateSystem(*tem, {u8"Fcck"});
-	scene->AddTickedSystemNode(*node, { });
+	auto node = scene->CreateSystem(*tem);
+	scene->AddTickedSystemNode(node, { u8"Fuck" }, {});
 
 	scene->Commited(context, {});
 
