@@ -4,6 +4,7 @@ import std;
 import Potato;
 import Dumpling;
 import Noodles;
+import MapoToufuRenderer;
 import MapoToufuForm;
 import RendererManager;
 import Scene;
@@ -34,14 +35,28 @@ struct Printer
 int main()
 {
 	Dumpling::Device::InitDebugLayer();
-	auto scene = Scene::Create();
+
 
 	Potato::Task::TaskContext context;
+	context.AddGroupThread({ 1 }, 1);
+	context.AddGroupThread({ 2 }, 6);
+	auto requireID = *context.GetRandomThreadIDFromGroup(1);
+
+	auto renderer_module = MapoToufu::RendererModule::Create({});
+	auto form_module = MapoToufu::FormModule::Create(renderer_module, context, requireID, {});
+	
+	auto scene = Scene::Create();
+	auto frame_renderer = renderer_module->CreateFrameRenderer();
+	scene->AddSingleton(std::move(frame_renderer));
+
+	auto from = form_module->CreateForm({}, 0);
+
+	auto ent = scene->CreateEntity(std::move(from));
+
+	
 	auto hard_device = Dumpling::Device::Create();
 
-	context.AddGroupThread({1}, 1);
-	context.AddGroupThread({2}, 6);
-	auto requireID = *context.GetRandomThreadIDFromGroup(1);
+	
 
 	MapoToufu::CommitedFormMessageLoop(scene, context, requireID);
 

@@ -6,20 +6,66 @@ import std;
 import Scene;
 import Potato;
 import Dumpling;
-import DumplingImGui;
+import MapoToufuRenderer;
 
 
 export namespace MapoToufu
 {
-	using Dumpling::Form;
-	using Dumpling::FormWrapper;
-	using Dumpling::FormEventCapture;
-	using Dumpling::Device;
-	using Dumpling::Gui::HeadUpDisplay;
-	using Dumpling::Gui::Widget;
 
 	using Noodles::SystemName;
 
+	export struct FormModule;
+
+	struct Form : protected Potato::IR::MemoryResourceRecordIntrusiveInterface
+	{
+		using Ptr = Potato::Pointer::IntrusivePtr<Form>;
+
+		using Property = Dumpling::FormProperty;
+		
+	protected:
+
+		friend struct Potato::Pointer::DefaultIntrusiveWrapper;
+
+		std::shared_mutex mutex;
+		Dumpling::Form::Ptr form_ptr;
+		Dumpling::FormWrapper::Ptr wrapper;
+	};
+
+	struct FormModule : protected Potato::Task::Task, protected Potato::IR::MemoryResourceRecordIntrusiveInterface
+	{
+		using Ptr = Potato::Pointer::IntrusivePtr<FormModule>;
+
+		struct Config
+		{
+			std::chrono::steady_clock::duration duration = std::chrono::milliseconds{10};
+			Potato::Task::Priority priority = Potato::Task::Priority::Normal;
+			std::u8string_view task_name = u8"FormSystem";
+		};
+
+		static Ptr Create(RendererModule::Ptr system, Potato::Task::TaskContext& context, std::thread::id require_thread_id, Config config, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
+
+		bool RegisterSystem(Scene& scene, std::u8string_view group_name, Noodles::SystemNodeProperty base_property);
+		Form::Ptr CreateForm(Form::Property init_property, std::size_t identity);
+
+	protected:
+
+		friend struct Potato::Pointer::DefaultIntrusiveWrapper;
+
+		RendererModule::Ptr renderer;
+		std::chrono::steady_clock::duration duration;
+
+		std::mutex mutex;
+
+		struct InitForm
+		{
+			Form::Ptr target_form;
+			Form::Property init_property;
+		};
+
+		std::pmr::vector<InitForm> init_forms;
+	};
+
+	/*
 	struct FormProperty : public Dumpling::FormProperty
 	{
 		Widget::Ptr widget;
@@ -42,6 +88,6 @@ export namespace MapoToufu
 	};
 
 	bool CommitedFormMessageLoop(Scene::Ptr reference_scene, Potato::Task::TaskContext& context, std::thread::id id, MessageLoopInitProperty property = {}, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
-
+	*/
 
 }
