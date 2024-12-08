@@ -4,12 +4,7 @@ import std;
 import Potato;
 import Dumpling;
 import Noodles;
-import MapoToufuRenderer;
-import MapoToufuForm;
-import RendererManager;
-import Scene;
-import DumplingImGui;
-import DumplingHLSLComplier;
+import MapoToufu;
 
 struct A {};
 struct B {};
@@ -32,8 +27,27 @@ struct Printer
 	}
 };
 
+using namespace MapoToufu;
+
 int main()
 {
+
+	GameContext context;
+	{
+		auto renderer_module = RendererModule::Create({});
+		context.RegisterModule(renderer_module);
+		auto form_module = FormModule::Create({});
+		context.RegisterModule(form_module);
+	}
+
+	auto scene = context.CreateScene();
+
+	context.Loop();
+
+	volatile int i = 0;
+
+
+	/*
 	Dumpling::Device::InitDebugLayer();
 
 
@@ -181,4 +195,5 @@ int main()
 	frame_renderer->FlushToLastFrame();
 
 	return 0;
+	*/
 }

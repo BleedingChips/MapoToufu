@@ -5,6 +5,7 @@ module;
 module MapoToufuForm;
 import std;
 
+/*
 struct TopFormEventResponder : public Dumpling::FormEventCapture
 {
 	void AddFormEventCaptureRef() const override {}
@@ -21,9 +22,68 @@ struct TopFormEventResponder : public Dumpling::FormEventCapture
 		return Dumpling::FormEvent::Respond::PASS;
 	}
 }DefaultRespond;
+*/
 
 namespace MapoToufu
 {
+
+	bool FormModule::PostRegister(GameContextWrapper& context)
+	{
+		std::lock_guard lg(property_mutex);
+		if(!renderer)
+		{
+			auto module = context.FindModule(*StructLayout::GetStatic<RendererModule>());
+			if (module)
+			{
+				renderer = static_cast<RendererModule*>(module.GetPointer());
+				auto thread_id = context.GetWindowMessageThreadID();
+				Potato::Task::TaskFilter filter{
+					Potato::Task::Priority::Normal,
+					Potato::Task::Category::THREAD_TASK,
+					0,
+					thread_id
+				};
+				if(context.CommitTask(this, {u8"FormModule", {}, filter }))
+				{
+					return true;
+				}else
+				{
+					renderer.Reset();
+				}
+			}
+		}
+		return false;
+	}
+
+	FormModule::FormModule(Potato::IR::MemoryResourceRecord record, Config config)
+		: MemoryResourceRecordIntrusiveInterface(record)
+	{
+		
+	}
+
+	auto FormModule::Create(Config config, std::pmr::memory_resource* resource)
+		-> Ptr
+	{
+		auto re = Potato::IR::MemoryResourceRecord::Allocate<FormModule>(resource);
+		if(re)
+		{
+			return new (re.Get()) FormModule{re, config};
+		}
+		return {};
+	}
+
+	void FormModule::TaskExecute(Potato::Task::TaskContextWrapper& status)
+	{
+		/*
+		while(Dumpling::Form::PeekMessageEventOnce())
+		{
+			
+		}
+		*/
+	}
+
+
+	/*
 	std::future<FormTuple> CreateForm(Potato::Task::TaskContext& context, FormProperty property, Device& device,  std::thread::id thread_id, bool IsTopForm, std::size_t identity, std::pmr::memory_resource* resource)
 	{
 		if(thread_id != std::thread::id{})
@@ -117,6 +177,7 @@ namespace MapoToufu
 		};
 		return context.CommitTask(std::move(task), task_property);
 	}
+	*/
 }
 
 

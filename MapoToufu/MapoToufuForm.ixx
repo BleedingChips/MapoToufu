@@ -3,16 +3,14 @@ module;
 export module MapoToufuForm;
 
 import std;
-import Scene;
 import Potato;
 import Dumpling;
+import MapoToufuScene;
 import MapoToufuRenderer;
 
 
 export namespace MapoToufu
 {
-
-	using Noodles::SystemName;
 
 	export struct FormModule;
 
@@ -31,9 +29,9 @@ export namespace MapoToufu
 		Dumpling::FormWrapper::Ptr wrapper;
 	};
 
-	struct FormModule : protected Potato::Task::Task, protected Potato::IR::MemoryResourceRecordIntrusiveInterface
+	struct FormModule : public ModuleInterface, protected Potato::Task::Task, protected Potato::IR::MemoryResourceRecordIntrusiveInterface
 	{
-		using Ptr = Potato::Pointer::IntrusivePtr<FormModule>;
+		using Ptr = Potato::Pointer::IntrusivePtr<FormModule, ModuleInterface::Wrapper>;
 
 		struct Config
 		{
@@ -42,15 +40,26 @@ export namespace MapoToufu
 			std::u8string_view task_name = u8"FormSystem";
 		};
 
-		static Ptr Create(RendererModule::Ptr system, Potato::Task::TaskContext& context, std::thread::id require_thread_id, Config config, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
+		StructLayout::Ptr GetStructLayout() const override { return StructLayout::GetStatic<FormModule>(); }
 
-		bool RegisterSystem(Scene& scene, std::u8string_view group_name, Noodles::SystemNodeProperty base_property);
+		static Ptr Create(Config config, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
+		bool PostRegister(GameContextWrapper& context) override;
+
 		Form::Ptr CreateForm(Form::Property init_property, std::size_t identity);
 
 	protected:
 
+		FormModule(Potato::IR::MemoryResourceRecord record, Config config);
+
+		void AddModuleInterfaceRef() const override { MemoryResourceRecordIntrusiveInterface::AddRef(); }
+		void SubModuleInterfaceRef() const override { MemoryResourceRecordIntrusiveInterface::SubRef(); }
+		void AddTaskRef() const override { MemoryResourceRecordIntrusiveInterface::AddRef(); }
+		void SubTaskRef() const override { MemoryResourceRecordIntrusiveInterface::SubRef(); }
+		void TaskExecute(Potato::Task::TaskContextWrapper& status) override;
+
 		friend struct Potato::Pointer::DefaultIntrusiveWrapper;
 
+		std::shared_mutex property_mutex;
 		RendererModule::Ptr renderer;
 		std::chrono::steady_clock::duration duration;
 
