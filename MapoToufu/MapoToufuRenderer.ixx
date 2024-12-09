@@ -6,37 +6,39 @@ import std;
 import Potato;
 import Dumpling;
 import MapoToufuScene;
+import MapoToufuGameContext;
 
 export namespace MapoToufu
 {
-
-	struct FrameRenderer
+	struct Form
 	{
-		Dumpling::FrameRenderer::Ptr renderer;
+		using Config = Dumpling::Form::Config;
+		static void PostQuit() { Dumpling::Form::PostQuitEvent(); }
+	protected:
+		Dumpling::Form form;
+		Dumpling::FormWrapper::Ptr wrapper;
+		operator bool() const { return form; }
 	};
 
-	struct RendererModule : public ModuleInterface, protected Potato::IR::MemoryResourceRecordIntrusiveInterface
+	struct Renderer : public ModuleInterface, protected Potato::IR::MemoryResourceRecordIntrusiveInterface
 	{
-		using Ptr = Potato::Pointer::IntrusivePtr<RendererModule, ModuleInterface::Wrapper>;
+		
+		using Ptr = Potato::Pointer::IntrusivePtr<Renderer, ModuleInterface::Wrapper>;
 
-		struct Config
-		{
-		};
-
-		static Ptr Create(Config config, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
-
-		StructLayout::Ptr GetStructLayout() const override { return StructLayout::GetStatic<RendererModule>(); }
-
-		FrameRenderer CreateFrameRenderer() const;
+		static auto Create(std::pmr::memory_resource* resource = std::pmr::get_default_resource()) -> Ptr;
+		Form CreateForm(Form::Config config);
 
 	protected:
 
-		RendererModule(Potato::IR::MemoryResourceRecord record, Config config);
+		Renderer(Potato::IR::MemoryResourceRecord record,  Dumpling::Device::Ptr device) : MemoryResourceRecordIntrusiveInterface(record), device(std::move(device)) {}
+
+		Dumpling::Device::Ptr device;
 
 		void AddModuleInterfaceRef() const override { MemoryResourceRecordIntrusiveInterface::AddRef(); }
 		void SubModuleInterfaceRef() const override { MemoryResourceRecordIntrusiveInterface::SubRef(); }
+		bool MainThreadTick() override;
 
-		friend struct Potato::Pointer::DefaultIntrusiveWrapper;
-		Dumpling::DevicePtr device;
+		friend struct ModuleInterface::Wrapper;
 	};
+
 };
