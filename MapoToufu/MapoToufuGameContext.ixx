@@ -6,6 +6,7 @@ import std;
 import Potato;
 import Dumpling;
 import MapoToufuScene;
+import MapoToufuRenderer;
 
 export namespace MapoToufu
 {
@@ -18,7 +19,6 @@ export namespace MapoToufu
 		{
 			void AddRef(ModuleInterface const* ptr) { ptr->AddModuleInterfaceRef(); }
 			void SubRef(ModuleInterface const* ptr) { ptr->SubModuleInterfaceRef(); }
-
 		};
 
 		using Ptr = Potato::Pointer::IntrusivePtr<ModuleInterface, Wrapper>;
@@ -41,12 +41,17 @@ export namespace MapoToufu
 		struct Config
 		{
 			std::pmr::memory_resource* scene_resource = std::pmr::get_default_resource();
+			std::pmr::memory_resource* renderer_resource = std::pmr::get_default_resource();
+			std::int32_t renderer_priority_layout = 0;
+			std::int32_t renderer_priority_first = 0;
+			bool with_renderer = true;
 		};
 
 		bool RegisterModule(ModuleInterface::Ptr ptr);
 		Scene::Ptr CreateScene();
 		void Loop();
-		GameContext(Config config = {}) : scene_resource(config.scene_resource) {}
+
+		GameContext(Config config = {});
 
 		ModuleInterface::Ptr FindModule(StructLayout const& layout) const;
 		template<typename Type>
@@ -56,18 +61,15 @@ export namespace MapoToufu
 
 	protected:
 
-		std::thread::id GetWindowMessageThreadID_AssumedLocked() const;
-
-		std::pmr::memory_resource* const scene_resource;
+		Config const config;
+		std::thread::id const current_thread_id;
 
 		Potato::Task::TaskContext context;
 
 		mutable std::shared_mutex module_mutex;
 		std::pmr::vector<std::tuple<StructLayout::Ptr, ModuleInterface::Ptr>> modules;
 
-		std::mutex form_init;
-		std::thread::id current_thread_id;
-		Dumpling::Device::Ptr renderer_device;
+		Renderer renderer;
 	};
 
 }

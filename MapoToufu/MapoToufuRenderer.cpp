@@ -4,20 +4,14 @@ module MapoToufuRenderer;
 
 namespace MapoToufu
 {
-	auto RendererModule::Create(Config config, std::pmr::memory_resource* resource)
-		->Ptr
+	bool Renderer::Init(std::pmr::memory_resource* resource)
 	{
-		auto re = Potato::IR::MemoryResourceRecord::Allocate<RendererModule>(resource);
-		if (re)
+		if (resource != nullptr)
 		{
-			return new(re.Get()) RendererModule{ re, std::move(config) };
+			Dumpling::Device::InitDebugLayer();
+			renderer = Dumpling::Device::Create(resource);
+			return renderer;
 		}
-		return {};
-	}
-
-	RendererModule::RendererModule(Potato::IR::MemoryResourceRecord record, Config config)
-		: MemoryResourceRecordIntrusiveInterface(record)
-	{
-		Dumpling::Device::InitDebugLayer();
+		return false;
 	}
 }

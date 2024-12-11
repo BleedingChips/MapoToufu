@@ -33,12 +33,6 @@ int main()
 {
 
 	GameContext context;
-	{
-		auto renderer_module = RendererModule::Create({});
-		context.RegisterModule(renderer_module);
-		auto form_module = FormModule::Create({});
-		context.RegisterModule(form_module);
-	}
 
 	auto scene = context.CreateScene();
 
