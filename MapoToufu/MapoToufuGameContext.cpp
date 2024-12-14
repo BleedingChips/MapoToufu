@@ -42,7 +42,21 @@ namespace MapoToufu
 
 	Scene::Ptr GameContext::CreateScene()
 	{
-		return Scene::Create(config.scene_resource);
+		auto ptr = Scene::Create(config.scene_resource);
+		if (ptr)
+		{
+			
+		}
+		return ptr;
+	}
+
+	void GameContext::InsertEventCapture(FormEventCapturePlatform::Ptr capture)
+	{
+		if (capture)
+		{
+			std::lock_guard lg(event_mutex);
+			event_captures.emplace_back(std::move(capture));
+		}
 	}
 
 	ModuleInterface::Ptr GameContext::FindModule(StructLayout const& layout) const

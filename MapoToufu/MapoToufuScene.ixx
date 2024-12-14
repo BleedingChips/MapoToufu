@@ -10,7 +10,8 @@ import Dumpling;
 export namespace MapoToufu
 {
 
-	
+	using Noodles::AtomicComponentFilter;
+	using Noodles::AtomicSingletonFilter;
 
 	using SceneWrapper = Noodles::ContextWrapper;
 

@@ -38,6 +38,9 @@ export namespace MapoToufu
 	export struct GameContext
 	{
 
+		using FormEventCapturePlatform = Dumpling::FormEventCapturePlatform;
+		using FormEventCapture = Dumpling::FormEventCapture;
+
 		struct Config
 		{
 			std::pmr::memory_resource* scene_resource = std::pmr::get_default_resource();
@@ -58,6 +61,7 @@ export namespace MapoToufu
 		ModuleInterface::Ptr FindModule() const { return FindModule(StructLayout::GetStatic<Type>()); }
 
 		bool CommitTask(Potato::Task::Task::Ptr task, Potato::Task::TaskProperty property) { return context.CommitTask(std::move(task), std::move(property)); }
+		void InsertEventCapture(FormEventCapturePlatform::Ptr capture);
 
 	protected:
 
@@ -70,6 +74,9 @@ export namespace MapoToufu
 		std::pmr::vector<std::tuple<StructLayout::Ptr, ModuleInterface::Ptr>> modules;
 
 		Renderer renderer;
+
+		mutable std::shared_mutex event_mutex;
+		std::pmr::vector<Dumpling::FormEventCapturePlatform::Ptr> event_captures;
 	};
 
 }
