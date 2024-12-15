@@ -11,79 +11,41 @@ namespace MapoToufu
 
 
 	GameContext::GameContext(Config in_config)
-		: config(std::move(in_config)), current_thread_id(std::this_thread::get_id())
+		: config(std::move(in_config))
 	{
-		renderer.Init(config.renderer_resource);
 	}
 
 	void GameContext::Loop()
 	{
-		assert(current_thread_id == std::this_thread::get_id());
-		bool need_loop = true;
-		while (need_loop)
+		bool continue_loop = true;
+		while(continue_loop)
 		{
 			while(true)
 			{
 				auto re = Dumpling::Form::PeekMessageEventOnce();
-				if (re.has_value())
+				if(re)
 				{
-					if (!*re)
+					if(!*re)
 						break;
-				}
-				else
+				}else
 				{
-					need_loop = false;
-					break;
+					continue_loop = false;
 				}
 			}
+			task_context.ProcessTaskOnce({});
+			std::this_thread::yield();
 		}
 	}
-
 
 	Scene::Ptr GameContext::CreateScene()
 	{
 		auto ptr = Scene::Create(config.scene_resource);
-		if (ptr)
-		{
-			
-		}
 		return ptr;
 	}
 
-	void GameContext::InsertEventCapture(FormEventCapturePlatform::Ptr capture)
+	bool GameContext::Launch(Scene& scene)
 	{
-		if (capture)
-		{
-			std::lock_guard lg(event_mutex);
-			event_captures.emplace_back(std::move(capture));
-		}
-	}
-
-	ModuleInterface::Ptr GameContext::FindModule(StructLayout const& layout) const
-	{
-		std::shared_lock lg(module_mutex);
-		for (auto& Ite : modules)
-		{
-			auto& [ptr, module] = Ite;
-			if (ptr.GetPointer() == &layout || *ptr == layout)
-			{
-				return module;
-			}
-		}
-		return {};
-	}
-
-	bool GameContext::RegisterModule(ModuleInterface::Ptr ptr)
-	{
-		if (ptr)
-		{
-			{
-				std::lock_guard lg(module_mutex);
-				modules.emplace_back(ptr->GetStructLayout(), ptr);
-			}
-			ptr->PostRegister(*this);
-		}
-		return false;
+		return scene.Commited(task_context, {});
 	}
 }
 

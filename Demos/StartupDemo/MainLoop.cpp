@@ -34,8 +34,18 @@ int main()
 
 	GameContext context;
 
+	auto renderer = RendererModule::Create({});
+
+
 	auto scene = context.CreateScene();
 
+	renderer->CreateRenderer(*scene);
+
+	auto form = renderer->CreateForm();
+
+	auto ent = scene->CreateEntity(std::move(form));
+
+	context.Launch(*scene);
 	context.Loop();
 
 	volatile int i = 0;

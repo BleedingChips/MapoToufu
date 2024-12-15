@@ -6,10 +6,10 @@ import std;
 import Potato;
 import Dumpling;
 import MapoToufuScene;
+import MapoToufuGameContext;
 
 export namespace MapoToufu
 {
-
 	struct Form
 	{
 		struct Event : Dumpling::FormEvent
@@ -17,42 +17,40 @@ export namespace MapoToufu
 			bool captured = false;
 		};
 
-	protected:
-
 		Dumpling::Form  form;
 		Dumpling::FormWrapper::Ptr form_wrapper;
-
-		std::shared_mutex reading_mutex;
-		std::pmr::vector<Event> captured_event;
-
-		std::shared_mutex cached_event_mutex;
-		std::pmr::vector<Event> cache_captured_event_event;
 	};
 
 	struct FrameRenderer
 	{
-		Dumpling::FrameRenderer::Ptr renderer;
+		Dumpling::FrameRenderer::Ptr frame_renderer;
 	};
 
 
-	struct Renderer
+	struct RendererModule : public Potato::IR::MemoryResourceRecordIntrusiveInterface
 	{
-		bool Init(std::pmr::memory_resource* resource);
 
-		struct SystemProperty
+		struct Config
 		{
 			std::int32_t priority_layout = 0;
 			std::int32_t priority_first = 0;
-			std::u8string_view group_name;
+			std::u8string_view group_name = u8"renderer_module";
 		};
 
-		void OnSceneCreated(Scene& scene, SystemProperty property);
+		using FormConfig = Dumpling::Form::Config;
+
+		using Ptr = Potato::Pointer::IntrusivePtr<RendererModule>;
+
+		static auto Create(Config config) -> Ptr;
+
+		Form CreateForm();
+		bool CreateRenderer(Scene& scene);
 
 	protected:
 
-		static void UpdateFormFrame(SceneWrapper& wrapper, AtomicComponentFilter<Form> c_filter, AtomicSingletonFilter<FrameRenderer> c_renderer);
+		RendererModule(Potato::IR::MemoryResourceRecord record, Config config, Dumpling::Device::Ptr renderer);
 
-
+		Config config;
 		Dumpling::Device::Ptr renderer;
 		operator bool() const { return renderer; }
 	};
