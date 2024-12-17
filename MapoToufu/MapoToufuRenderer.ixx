@@ -5,11 +5,64 @@ export module MapoToufuRenderer;
 import std;
 import Potato;
 import Dumpling;
+import Noodles;
 import MapoToufuScene;
 import MapoToufuGameContext;
 
 export namespace MapoToufu
 {
+
+	using Dumpling::FormEvent;
+
+	struct FormEventStorage : public Dumpling::FormEventCapture, public Potato::IR::MemoryResourceRecordIntrusiveInterface
+	{
+
+		using Ptr = Potato::Pointer::IntrusivePtr<FormEventStorage, Dumpling::FormEventCapture::Wrapper>;
+
+		static Ptr Create(std::pmr::memory_resource* resource = std::pmr::get_default_resource());
+
+		template<typename Type>
+		void ForeachEvent(Type&& type, struct Form& form) requires(std::is_invocable_r_v<FormEvent::Respond, Type, FormEvent, Form&>)
+		{
+			std::lock_guard lg(respond_mutex);
+			for (auto& ite : respond_events)
+			{
+				if (!ite.has_captured)
+				{
+					FormEvent::Respond re = type(ite, form);
+					if (re == FormEvent::Respond::CAPTURED)
+					{
+						ite.has_captured = true;
+					}
+				}
+			}
+		}
+
+		void SwapReceiveEvent();
+
+	protected:
+
+		FormEventStorage(Potato::IR::MemoryResourceRecord record) : MemoryResourceRecordIntrusiveInterface(record) {}
+
+		void AddFormEventCaptureRef() const override { MemoryResourceRecordIntrusiveInterface::AddRef(); }
+		void SubFormEventCaptureRef() const override { MemoryResourceRecordIntrusiveInterface::SubRef(); }
+		FormEvent::Respond RespondEvent(FormEvent event) override;
+
+		struct Event
+		{
+			FormEvent event;
+			bool has_captured = false;
+		};
+
+		std::mutex respond_mutex;
+		std::pmr::vector<Event> respond_events;
+
+		std::mutex receive_mutex;
+		std::pmr::vector<Event> receive_events;
+	};
+
+
+
 	struct Form
 	{
 		struct Event : Dumpling::FormEvent
@@ -19,6 +72,7 @@ export namespace MapoToufu
 
 		Dumpling::Form  form;
 		Dumpling::FormWrapper::Ptr form_wrapper;
+		FormEventStorage::Ptr event_storage;
 	};
 
 	struct FrameRenderer
@@ -43,7 +97,7 @@ export namespace MapoToufu
 
 		static auto Create(Config config) -> Ptr;
 
-		Form CreateForm();
+		bool CreateForm(Entity& entity, Scene& scene);
 		bool CreateRenderer(Scene& scene);
 
 	protected:

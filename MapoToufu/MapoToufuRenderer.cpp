@@ -4,12 +4,48 @@ module MapoToufuRenderer;
 
 namespace MapoToufu
 {
+
+	FormEventStorage::Ptr FormEventStorage::Create(std::pmr::memory_resource* resource)
+	{
+		auto ir = Potato::IR::MemoryResourceRecord::Allocate<FormEventStorage>(resource);
+		if (ir)
+		{
+			return new(ir.Get()) FormEventStorage{ir};
+		}
+		return {};
+	}
+
+	FormEvent::Respond FormEventStorage::RespondEvent(FormEvent event)
+	{
+		if (event.IsModify())
+		{
+			auto modify = event.GetModify();
+			if (modify.message == decltype(modify.message)::DESTROY)
+			{
+				Dumpling::Form::PostQuitEvent();
+			}
+			std::lock_guard lg(receive_mutex);
+			receive_events.emplace_back(std::move(event), false);
+		}
+		return FormEvent::Respond::PASS;
+	}
+
+	void FormEventStorage::SwapReceiveEvent()
+	{
+		std::lock(respond_mutex, receive_mutex);
+		std::lock_guard lg1(respond_mutex, std::adopt_lock);
+		std::lock_guard lg2(receive_mutex, std::adopt_lock);
+		std::swap(respond_events, receive_events);
+		receive_events.clear();
+	}
+
+
 	auto RendererModule::Create(Config config) -> Ptr
 	{
+		Dumpling::Device::InitDebugLayer();
 		auto render = Dumpling::Device::Create();
 		if(render)
 		{
-			Dumpling::Device::InitDebugLayer();
 			auto re = Potato::IR::MemoryResourceRecord::Allocate<RendererModule>(std::pmr::get_default_resource());
 			if(re)
 			{
@@ -54,6 +90,7 @@ namespace MapoToufu
 				for (auto& ite : span)
 				{
 					ite.form_wrapper->LogicPresent();
+					ite.event_storage->SwapReceiveEvent();
 				}
 			}
 			else
@@ -88,17 +125,29 @@ namespace MapoToufu
 		return false;
 	}
 
-	Form RendererModule::CreateForm()
+	bool RendererModule::CreateForm(Entity& entity, Scene& scene)
 	{
-		auto form = Dumpling::Form::Create({});
+
+		Dumpling::Form::Config config;
+		auto storage = FormEventStorage::Create();
+		config.event_capture = storage;
+
+		auto form = Dumpling::Form::Create(std::move(config));
 		if(form)
 		{
 			auto wrapper = renderer->CreateFormWrapper(form, {});
 			if(wrapper)
 			{
-				return Form{ form, wrapper};
+				wrapper->LogicPresent();
+				Form real_form{ std::move(form), std::move(wrapper), std::move(storage)};
+
+				if (scene.AddEntityComponent(entity, std::move(real_form)))
+				{
+					return true;
+				}
 			}
+			form.DestroyForm();
 		}
-		return {};
+		return false;
 	}
 }

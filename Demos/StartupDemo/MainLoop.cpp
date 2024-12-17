@@ -41,9 +41,11 @@ int main()
 
 	renderer->CreateRenderer(*scene);
 
-	auto form = renderer->CreateForm();
+	auto ent = scene->CreateEntity();
 
-	auto ent = scene->CreateEntity(std::move(form));
+	renderer->CreateForm(*ent, *scene);
+
+	
 
 	context.Launch(*scene);
 	context.Loop();
