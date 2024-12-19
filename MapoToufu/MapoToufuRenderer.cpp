@@ -61,13 +61,44 @@ namespace MapoToufu
 		
 	}
 
-	void Renderer_FlushFormFrame(SceneWrapper& wrapper, AtomicSingletonFilter<FrameRenderer> c_renderer)
+	void Renderer_FlushFormFrame(SceneWrapper& wrapper, AtomicComponentFilter<Form> c_form, AtomicSingletonFilter<FrameRenderer> c_renderer)
 	{
 		auto wra = c_renderer.GetWrapper(wrapper);
 		auto ptr = c_renderer.Get<FrameRenderer>(wra);
 		if (ptr != nullptr)
 		{
 			ptr->frame_renderer->FlushToLastFrame();
+		}
+		std::size_t ite = 0;
+		while (true)
+		{
+			auto wra = c_form.IterateComponent_AssumedLocked(wrapper, ite++);
+			if (wra.has_value())
+			{
+				auto span = c_form.AsSpan<Form>(*wra);
+				for (auto& ite : span)
+				{
+					ite.form_wrapper->Present();
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+
+	void Renderer_Dispath_renderer(SceneWrapper& wrapper, AtomicSingletonFilter<FrameRenderer> c_renderer)
+	{
+		auto wra = c_renderer.GetWrapper(wrapper);
+		auto ptr = c_renderer.Get<FrameRenderer>(wra);
+		if (ptr != nullptr)
+		{
+			for (auto& ite : ptr->reference_node)
+			{
+				wrapper.AddTemporaryNodeImmediately(std::move(ite));
+			}
+			ptr->reference_node.clear();
 		}
 	}
 
@@ -107,7 +138,7 @@ namespace MapoToufu
 		if(scene.AddSingleton(std::move(f_renderer)))
 		{
 			Noodles::SystemNodeProperty node_property;
-			node_property.priority = Noodles::Priority{ config.priority_layout, config.priority_first, 1, 0 };
+			node_property.priority = Noodles::Priority{ config.priority_layout, config.priority_first, 0, 0 };
 			node_property.order_function = [](Noodles::SystemName self, Noodles::SystemName other) {  return Noodles::Order::BIGGER;  };
 
 			scene.CreateAndAddTickedAutomaticSystem(
@@ -115,7 +146,13 @@ namespace MapoToufu
 				{ u8"renderer_commit_renderer_frame", config.group_name }, node_property
 			);
 
-			node_property.priority = Noodles::Priority{ config.priority_layout, config.priority_first, 0, 0 };
+			node_property.priority = Noodles::Priority{ config.priority_layout, config.priority_first, 1, 0 };
+			scene.CreateAndAddTickedAutomaticSystem(
+				Renderer_Dispath_renderer,
+				{ u8"renderer_commit_dispatch", config.group_name }, node_property
+			);
+
+			node_property.priority = Noodles::Priority{ config.priority_layout, config.priority_first, 2, 0 };
 			scene.CreateAndAddTickedAutomaticSystem(
 				Renderer_FlushFormFrame,
 				{ u8"renderer_flush_renderer_frame", config.group_name }, node_property

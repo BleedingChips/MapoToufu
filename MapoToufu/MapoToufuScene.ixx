@@ -14,7 +14,8 @@ export namespace MapoToufu
 	using Noodles::AtomicSingletonFilter;
 
 	using SceneWrapper = Noodles::ContextWrapper;
-	using Noodles::Entity;
+	using Entity = Noodles::Entity;
+	using SystemNode = Noodles::SystemNode;
 
 	struct Scene : public Noodles::Context, public Potato::IR::MemoryResourceRecordIntrusiveInterface
 	{

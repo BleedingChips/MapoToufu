@@ -78,6 +78,7 @@ export namespace MapoToufu
 	struct FrameRenderer
 	{
 		Dumpling::FrameRenderer::Ptr frame_renderer;
+		std::pmr::vector<SystemNode::Ptr> reference_node;
 	};
 
 

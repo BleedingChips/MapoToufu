@@ -34,18 +34,69 @@ int main()
 
 	GameContext context;
 
-	auto renderer = RendererModule::Create({});
+	auto renderer_module = RendererModule::Create({});
 
 
 	auto scene = context.CreateScene();
 
-	renderer->CreateRenderer(*scene);
+	renderer_module->CreateRenderer(*scene);
 
 	auto ent = scene->CreateEntity();
 
-	renderer->CreateForm(*ent, *scene);
+	renderer_module->CreateForm(*ent, *scene);
 
-	
+	Dumpling::Color color{ 0.0f, 0.0f, 0.0f, 1.0f };
+
+	auto Fun = [](float color, float speed, float time) -> float
+		{
+			return std::fmod(color + speed * time, 2.0f);
+		};
+
+	auto ptr = scene->CreateAutomaticSystem([&](SceneWrapper& context, AtomicComponentFilter<Form> c_form, AtomicSingletonFilter<FrameRenderer> s_renderer)
+	{
+			auto r = s_renderer.GetWrapper(context);
+			auto ptr = s_renderer.Get<FrameRenderer>(r);
+		if (ptr != nullptr)
+		{
+			auto wra = c_form.IterateComponent_AssumedLocked(context, 0);
+			if (wra)
+			{
+				auto span = c_form.AsSpan<Form>(*wra);
+				Dumpling::PassRenderer renderer;
+				ptr->frame_renderer->PopPassRenderer(renderer);
+
+				color.R = Fun(color.R, 0.2f, context.GetContext().GetFramedDurationInSecond());
+				color.G = Fun(color.G, 0.3f, context.GetContext().GetFramedDurationInSecond());
+				color.B = Fun(color.B, 0.4f, context.GetContext().GetFramedDurationInSecond());
+
+				Dumpling::Color new_color{ color };
+
+				new_color.R = std::abs(new_color.R - 1.0f);
+				new_color.G = std::abs(new_color.G - 1.0f);
+				new_color.B = std::abs(new_color.B - 1.0f);
+
+				for (auto& ite : span)
+				{
+					Dumpling::RenderTargetSet carrier;
+					carrier.AddRenderTarget(*ite.form_wrapper);
+
+					renderer.SetRenderTargets(carrier);
+					renderer.ClearRendererTarget(0, new_color);
+				}
+				ptr->frame_renderer->FinishPassRenderer(renderer);
+			}
+		}
+	});
+
+	scene->CreateAndAddTickedAutomaticSystem([&](SceneWrapper& context, AtomicSingletonFilter<FrameRenderer> s_renderer)
+	{
+			auto wra = s_renderer.GetWrapper(context);
+			auto s_ptr = s_renderer.Get<FrameRenderer>(wra);
+			if (s_ptr != nullptr)
+			{
+				s_ptr->reference_node.push_back(ptr);
+			}
+	}, {}, {0, 1, 1, 1});
 
 	context.Launch(*scene);
 	context.Loop();
