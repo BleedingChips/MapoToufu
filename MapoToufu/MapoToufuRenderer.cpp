@@ -63,70 +63,62 @@ namespace MapoToufu
 
 	void Renderer_FlushFormFrame(SceneWrapper& wrapper, AtomicComponentFilter<Form> c_form, AtomicSingletonFilter<FrameRenderer> c_renderer)
 	{
-		auto wra = c_renderer.GetWrapper(wrapper);
-		auto ptr = c_renderer.Get<FrameRenderer>(wra);
-		if (ptr != nullptr)
+		if (c_renderer.GetSingletons(wrapper))
 		{
-			ptr->frame_renderer->FlushToLastFrame();
+			auto ptr = c_renderer.Get<FrameRenderer>();
+			if (ptr != nullptr)
+			{
+				ptr->frame_renderer->FlushToLastFrame();
+			}
 		}
+
 		std::size_t ite = 0;
-		while (true)
+		while (c_form.IterateComponent(wrapper, ite++))
 		{
-			auto wra = c_form.IterateComponent_AssumedLocked(wrapper, ite++);
-			if (wra.has_value())
+			auto span = c_form.AsSpan<Form>();
+			for (auto& ite : span)
 			{
-				auto span = c_form.AsSpan<Form>(*wra);
-				for (auto& ite : span)
-				{
-					ite.form_wrapper->Present();
-				}
-			}
-			else
-			{
-				break;
+				ite.form_wrapper->Present();
 			}
 		}
+		
 	}
 
 	void Renderer_Dispath_renderer(SceneWrapper& wrapper, AtomicSingletonFilter<FrameRenderer> c_renderer)
 	{
-		auto wra = c_renderer.GetWrapper(wrapper);
-		auto ptr = c_renderer.Get<FrameRenderer>(wra);
-		if (ptr != nullptr)
+		if(c_renderer.GetSingletons(wrapper))
 		{
-			for (auto& ite : ptr->reference_node)
+			auto ptr = c_renderer.Get<FrameRenderer>();
+			if (ptr != nullptr)
 			{
-				wrapper.AddTemporaryNodeImmediately(std::move(ite));
+				for (auto& ite : ptr->reference_node)
+				{
+					wrapper.AddTemporaryNodeImmediately(std::move(ite));
+				}
+				ptr->reference_node.clear();
 			}
-			ptr->reference_node.clear();
 		}
 	}
 
 	void Renderer_CommitedFormFrame(SceneWrapper& wrapper, AtomicComponentFilter<Form> c_filter, AtomicSingletonFilter<FrameRenderer> c_renderer)
 	{
-		auto wra = c_renderer.GetWrapper(wrapper);
-		auto ptr = c_renderer.Get<FrameRenderer>(wra);
-		if (ptr != nullptr)
+		if (c_renderer.GetSingletons(wrapper))
 		{
-			ptr->frame_renderer->CommitFrame();
+			auto ptr = c_renderer.Get<FrameRenderer>();
+			if (ptr != nullptr)
+			{
+				ptr->frame_renderer->CommitFrame();
+			}
 		}
 
 		std::size_t ite = 0;
-		while (true)
+		while (c_filter.IterateComponent(wrapper, ite++))
 		{
-			auto wra = c_filter.IterateComponent_AssumedLocked(wrapper, ite++);
-			if (wra.has_value())
+			auto span = c_filter.AsSpan<Form>();
+			for (auto& ite : span)
 			{
-				auto span = c_filter.AsSpan<Form>(*wra);
-				for (auto& ite : span)
-				{
-					ite.form_wrapper->LogicPresent();
-					ite.event_storage->SwapReceiveEvent();
-				}
-			}
-			else
-			{
-				break;
+				ite.form_wrapper->LogicPresent();
+				ite.event_storage->SwapReceiveEvent();
 			}
 		}
 	}

@@ -54,48 +54,52 @@ int main()
 
 	auto ptr = scene->CreateAutomaticSystem([&](SceneWrapper& context, AtomicComponentFilter<Form> c_form, AtomicSingletonFilter<FrameRenderer> s_renderer)
 	{
-			auto r = s_renderer.GetWrapper(context);
-			auto ptr = s_renderer.Get<FrameRenderer>(r);
-		if (ptr != nullptr)
-		{
-			auto wra = c_form.IterateComponent_AssumedLocked(context, 0);
-			if (wra)
+			if (s_renderer.GetSingletons(context))
 			{
-				auto span = c_form.AsSpan<Form>(*wra);
-				Dumpling::PassRenderer renderer;
-				ptr->frame_renderer->PopPassRenderer(renderer);
-
-				color.R = Fun(color.R, 0.2f, context.GetContext().GetFramedDurationInSecond());
-				color.G = Fun(color.G, 0.3f, context.GetContext().GetFramedDurationInSecond());
-				color.B = Fun(color.B, 0.4f, context.GetContext().GetFramedDurationInSecond());
-
-				Dumpling::Color new_color{ color };
-
-				new_color.R = std::abs(new_color.R - 1.0f);
-				new_color.G = std::abs(new_color.G - 1.0f);
-				new_color.B = std::abs(new_color.B - 1.0f);
-
-				for (auto& ite : span)
+				auto ptr = s_renderer.Get<FrameRenderer>();
+				std::size_t index = 0;
+				if (ptr != nullptr)
 				{
-					Dumpling::RenderTargetSet carrier;
-					carrier.AddRenderTarget(*ite.form_wrapper);
+					while ( c_form.IterateComponent(context, index++))
+					{
+						auto span = c_form.AsSpan<Form>();
+						Dumpling::PassRenderer renderer;
+						ptr->frame_renderer->PopPassRenderer(renderer);
 
-					renderer.SetRenderTargets(carrier);
-					renderer.ClearRendererTarget(0, new_color);
+						color.R = Fun(color.R, 0.2f, context.GetContext().GetFramedDurationInSecond());
+						color.G = Fun(color.G, 0.3f, context.GetContext().GetFramedDurationInSecond());
+						color.B = Fun(color.B, 0.4f, context.GetContext().GetFramedDurationInSecond());
+
+						Dumpling::Color new_color{ color };
+
+						new_color.R = std::abs(new_color.R - 1.0f);
+						new_color.G = std::abs(new_color.G - 1.0f);
+						new_color.B = std::abs(new_color.B - 1.0f);
+
+						for (auto& ite : span)
+						{
+							Dumpling::RenderTargetSet carrier;
+							carrier.AddRenderTarget(*ite.form_wrapper);
+
+							renderer.SetRenderTargets(carrier);
+							renderer.ClearRendererTarget(0, new_color);
+						}
+						ptr->frame_renderer->FinishPassRenderer(renderer);
+					}
 				}
-				ptr->frame_renderer->FinishPassRenderer(renderer);
 			}
-		}
 	});
 
 	scene->CreateAndAddTickedAutomaticSystem([&](SceneWrapper& context, AtomicSingletonFilter<FrameRenderer> s_renderer)
 	{
-			auto wra = s_renderer.GetWrapper(context);
-			auto s_ptr = s_renderer.Get<FrameRenderer>(wra);
+		if (s_renderer.GetSingletons(context))
+		{
+			auto s_ptr = s_renderer.Get<FrameRenderer>();
 			if (s_ptr != nullptr)
 			{
 				s_ptr->reference_node.push_back(ptr);
 			}
+		}
 	}, {}, {0, 1, 1, 1});
 
 	context.Launch(*scene);

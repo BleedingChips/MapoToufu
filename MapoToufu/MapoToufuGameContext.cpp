@@ -13,6 +13,7 @@ namespace MapoToufu
 	GameContext::GameContext(Config in_config)
 		: config(std::move(in_config))
 	{
+		task_context.AddGroupThread({}, std::thread::hardware_concurrency());
 	}
 
 	void GameContext::Loop()
