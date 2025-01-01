@@ -100,7 +100,7 @@ int main()
 				s_ptr->reference_node.push_back(ptr);
 			}
 		}
-	}, {}, {0, 1, 1, 1});
+	}, { {0, 1, 1, 1} });
 
 	context.Launch(*scene);
 	context.Loop();

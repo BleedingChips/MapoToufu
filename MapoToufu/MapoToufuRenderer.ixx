@@ -89,7 +89,6 @@ export namespace MapoToufu
 		{
 			std::int32_t priority_layout = 0;
 			std::int32_t priority_first = 0;
-			std::u8string_view group_name = u8"renderer_module";
 		};
 
 		using FormConfig = Dumpling::Form::Config;

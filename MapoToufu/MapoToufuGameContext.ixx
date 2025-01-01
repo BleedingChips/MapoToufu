@@ -28,7 +28,7 @@ export namespace MapoToufu
 
 		GameContext(Config config = {});
 
-		bool CommitTask(Potato::Task::Task::Ptr task, Potato::Task::TaskProperty property) { return task_context.CommitTask(std::move(task), std::move(property)); }
+		bool CommitTask(Potato::Task::Node& task, Potato::Task::Property property) { return task_context.Commit(task, std::move(property)); }
 		void InsertEventCapture(FormEventCapturePlatform::Ptr capture);
 		bool Launch(Scene& scene);
 
@@ -36,7 +36,7 @@ export namespace MapoToufu
 
 		Config const config;
 
-		Potato::Task::TaskContext task_context;
+		Potato::Task::Context task_context;
 	};
 
 }

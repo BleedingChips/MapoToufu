@@ -93,7 +93,7 @@ namespace MapoToufu
 			{
 				for (auto& ite : ptr->reference_node)
 				{
-					wrapper.AddTemporaryNodeImmediately(std::move(ite));
+					wrapper.AddTemporarySystemNode(*ite, {});
 				}
 				ptr->reference_node.clear();
 			}
@@ -127,27 +127,32 @@ namespace MapoToufu
 	{
 		FrameRenderer f_renderer;
 		f_renderer.frame_renderer = renderer->CreateFrameRenderer();
-		if(scene.AddSingleton(std::move(f_renderer)))
+		if (scene.AddSingleton(std::move(f_renderer)))
 		{
-			Noodles::SystemNodeProperty node_property;
-			node_property.priority = Noodles::Priority{ config.priority_layout, config.priority_first, 0, 0 };
-			node_property.order_function = [](Noodles::SystemName self, Noodles::SystemName other) {  return Noodles::Order::BIGGER;  };
 
 			scene.CreateAndAddTickedAutomaticSystem(
 				Renderer_CommitedFormFrame,
-				{ u8"renderer_commit_renderer_frame", config.group_name }, node_property
+				{
+					{ config.priority_layout, config.priority_first, 0, 0 },
+					u8"renderer_module:renderer_commit_renderer_frame"
+				}
 			);
 
-			node_property.priority = Noodles::Priority{ config.priority_layout, config.priority_first, 1, 0 };
+
 			scene.CreateAndAddTickedAutomaticSystem(
 				Renderer_Dispath_renderer,
-				{ u8"renderer_commit_dispatch", config.group_name }, node_property
-			);
+				{
+				{ config.priority_layout, config.priority_first, 1, 0 },
+				u8"renderer_module:renderer_commit_dispatch"
+				});
 
-			node_property.priority = Noodles::Priority{ config.priority_layout, config.priority_first, 2, 0 };
+
 			scene.CreateAndAddTickedAutomaticSystem(
 				Renderer_FlushFormFrame,
-				{ u8"renderer_flush_renderer_frame", config.group_name }, node_property
+				{
+					{config.priority_layout, config.priority_first, 2, 0 },
+					u8"renderer_flush_renderer_frame"
+				}
 			);
 			return true;
 		}

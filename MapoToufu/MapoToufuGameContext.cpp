@@ -18,6 +18,7 @@ namespace MapoToufu
 
 	void GameContext::Loop()
 	{
+		Potato::Task::Context::ThreadExecuteContext context;
 		bool continue_loop = true;
 		while(continue_loop)
 		{
@@ -33,7 +34,7 @@ namespace MapoToufu
 					continue_loop = false;
 				}
 			}
-			task_context.ProcessTaskOnce({});
+			task_context.ExecuteContextThreadOnce(context, std::chrono::steady_clock::now());
 			std::this_thread::yield();
 		}
 	}
