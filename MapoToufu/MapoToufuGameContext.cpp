@@ -14,6 +14,7 @@ namespace MapoToufu
 		: config(std::move(in_config))
 	{
 		task_context.AddGroupThread({}, std::thread::hardware_concurrency());
+		manager = Noodles::StructLayoutManager::Create();
 	}
 
 	void GameContext::Loop()
@@ -41,7 +42,7 @@ namespace MapoToufu
 
 	Scene::Ptr GameContext::CreateScene()
 	{
-		auto ptr = Scene::Create(config.scene_resource);
+		auto ptr = Scene::Create(*manager, config.scene_resource);
 		return ptr;
 	}
 

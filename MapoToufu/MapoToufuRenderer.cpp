@@ -61,7 +61,7 @@ namespace MapoToufu
 		
 	}
 
-	void Renderer_FlushFormFrame(SceneWrapper& wrapper, AtomicComponentFilter<Form> c_form, AtomicSingletonFilter<FrameRenderer> c_renderer)
+	void Renderer_FlushFormFrame(SceneWrapper& wrapper, AutoComponentQuery<Form> c_form, AutoSingletonQuery<FrameRenderer> c_renderer)
 	{
 		if (c_renderer.GetSingletons(wrapper))
 		{
@@ -84,7 +84,7 @@ namespace MapoToufu
 		
 	}
 
-	void Renderer_Dispath_renderer(SceneWrapper& wrapper, AtomicSingletonFilter<FrameRenderer> c_renderer)
+	void Renderer_Dispath_renderer(SceneWrapper& wrapper, AutoSingletonQuery<FrameRenderer> c_renderer)
 	{
 		if(c_renderer.GetSingletons(wrapper))
 		{
@@ -100,7 +100,7 @@ namespace MapoToufu
 		}
 	}
 
-	void Renderer_CommitedFormFrame(SceneWrapper& wrapper, AtomicComponentFilter<Form> c_filter, AtomicSingletonFilter<FrameRenderer> c_renderer)
+	void Renderer_CommitedFormFrame(SceneWrapper& wrapper, AutoComponentQuery<Form> c_filter, AutoSingletonQuery<FrameRenderer> c_renderer)
 	{
 		if (c_renderer.GetSingletons(wrapper))
 		{
@@ -130,7 +130,7 @@ namespace MapoToufu
 		if (scene.AddSingleton(std::move(f_renderer)))
 		{
 
-			scene.CreateAndAddTickedAutomaticSystem(
+			scene.CreateAndAddAutoSystem(
 				Renderer_CommitedFormFrame,
 				{
 					{ config.priority_layout, config.priority_first, 0, 0 },
@@ -139,7 +139,7 @@ namespace MapoToufu
 			);
 
 
-			scene.CreateAndAddTickedAutomaticSystem(
+			scene.CreateAndAddAutoSystem(
 				Renderer_Dispath_renderer,
 				{
 				{ config.priority_layout, config.priority_first, 1, 0 },
@@ -147,7 +147,7 @@ namespace MapoToufu
 				});
 
 
-			scene.CreateAndAddTickedAutomaticSystem(
+			scene.CreateAndAddAutoSystem(
 				Renderer_FlushFormFrame,
 				{
 					{config.priority_layout, config.priority_first, 2, 0 },

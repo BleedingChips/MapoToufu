@@ -34,6 +34,7 @@ export namespace MapoToufu
 
 	protected:
 
+		Noodles::StructLayoutManager::Ptr manager;
 		Config const config;
 
 		Potato::Task::Context task_context;
