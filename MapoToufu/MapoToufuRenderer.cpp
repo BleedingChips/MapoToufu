@@ -26,6 +26,8 @@ namespace MapoToufu
 			}
 			std::lock_guard lg(receive_mutex);
 			receive_events.emplace_back(std::move(event), false);
+		}else if (event.IsSystem())
+		{
 		}
 		return FormEvent::Respond::PASS;
 	}

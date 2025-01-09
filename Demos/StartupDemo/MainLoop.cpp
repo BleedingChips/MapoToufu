@@ -52,6 +52,37 @@ int main()
 			return std::fmod(color + speed * time, 2.0f);
 		};
 
+
+	auto ptr2 = scene->CreateAndAddAutoSystem([](SceneWrapper& wrapper, AutoComponentQuery<Form> comp_query)
+		{
+			if (comp_query.IterateComponent(wrapper, 0))
+			{
+				auto span = comp_query.AsSpan<Form>();
+				for (auto& ite : span)
+				{
+					ite.event_storage->ForeachEvent([&](MapoToufu::FormEvent& event)-> MapoToufu::FormEvent::Respond
+					{
+						if (event.IsSystem())
+						{
+							auto sys = event.GetSystem();
+							if (sys.message == decltype(sys.message)::QUIT)
+							{
+								wrapper.GetContext().Quit();
+							}
+						}else if (event.IsModify())
+						{
+							auto modify = event.GetModify();
+							if (modify.message == decltype(modify.message)::DESTROY)
+							{
+								wrapper.GetContext().Quit();
+							}
+						}
+						return MapoToufu::FormEvent::Respond::PASS;
+					});
+				}
+			}
+		}, {{0, 1, 2, 3}, {u8"event_func"}});
+
 	auto ptr = scene->CreateAndAddAutoSystem([&](SceneWrapper& wrapper, AutoComponentQuery<Form> comp_query, AutoSingletonQuery<FrameRenderer> sing_query)
 	{
 			//auto k = context.GetContext().CreateAutomaticSystem([](AtomicComponentFilter<Form>) {});

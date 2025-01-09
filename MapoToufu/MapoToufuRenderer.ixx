@@ -22,14 +22,14 @@ export namespace MapoToufu
 		static Ptr Create(std::pmr::memory_resource* resource = std::pmr::get_default_resource());
 
 		template<typename Type>
-		void ForeachEvent(Type&& type, struct Form& form) requires(std::is_invocable_r_v<FormEvent::Respond, Type, FormEvent, Form&>)
+		void ForeachEvent(Type&& type) requires(std::is_invocable_r_v<FormEvent::Respond, Type, FormEvent&>)
 		{
 			std::lock_guard lg(respond_mutex);
 			for (auto& ite : respond_events)
 			{
 				if (!ite.has_captured)
 				{
-					FormEvent::Respond re = type(ite, form);
+					FormEvent::Respond re = type(ite.event);
 					if (re == FormEvent::Respond::CAPTURED)
 					{
 						ite.has_captured = true;

@@ -31,6 +31,7 @@ export namespace MapoToufu
 		bool CommitTask(Potato::Task::Node& task, Potato::Task::Property property) { return task_context.Commit(task, std::move(property)); }
 		void InsertEventCapture(FormEventCapturePlatform::Ptr capture);
 		bool Launch(Scene& scene);
+		static std::size_t GetMainLoopGroupID() { return std::numeric_limits<std::size_t>::max(); }
 
 	protected:
 

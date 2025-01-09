@@ -13,7 +13,7 @@ namespace MapoToufu
 	GameContext::GameContext(Config in_config)
 		: config(std::move(in_config))
 	{
-		task_context.AddGroupThread({}, std::thread::hardware_concurrency());
+		//task_context.AddGroupThread({}, std::thread::hardware_concurrency());
 		manager = Noodles::StructLayoutManager::Create();
 	}
 
@@ -35,9 +35,10 @@ namespace MapoToufu
 					continue_loop = false;
 				}
 			}
-			task_context.ExecuteContextThreadOnce(context, std::chrono::steady_clock::now());
+			task_context.ExecuteContextThreadOnce(context, std::chrono::steady_clock::now(), GetMainLoopGroupID());
 			std::this_thread::yield();
 		}
+		task_context.ExecuteContextThreadUntilNoExistTask(GetMainLoopGroupID());
 	}
 
 	Scene::Ptr GameContext::CreateScene()
