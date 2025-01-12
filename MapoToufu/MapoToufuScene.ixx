@@ -12,7 +12,7 @@ export namespace MapoToufu
 
 	using Noodles::AutoComponentQuery;
 	using Noodles::AutoSingletonQuery;
-	using Noodles::ThreadOrderQuery;
+	using Noodles::AutoThreadOrderQuery;
 
 	using SceneWrapper = Noodles::ContextWrapper;
 	using Entity = Noodles::Entity;

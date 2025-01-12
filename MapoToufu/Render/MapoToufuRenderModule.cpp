@@ -1,6 +1,6 @@
 module;
 #include <cassert>
-module MapoToufuRenderer;
+module MapoToufuRenderModule;
 
 namespace MapoToufu
 {
@@ -24,11 +24,9 @@ namespace MapoToufu
 			{
 				Dumpling::Form::PostQuitEvent();
 			}
-			std::lock_guard lg(receive_mutex);
-			receive_events.emplace_back(std::move(event), false);
-		}else if (event.IsSystem())
-		{
 		}
+		std::lock_guard lg(receive_mutex);
+		receive_events.emplace_back(std::move(event), false);
 		return FormEvent::Respond::PASS;
 	}
 
@@ -63,7 +61,7 @@ namespace MapoToufu
 		
 	}
 
-	void Renderer_FlushFormFrame(SceneWrapper& wrapper, AutoComponentQuery<Form> c_form, AutoSingletonQuery<FrameRenderer> c_renderer)
+	void RendererModule::Renderer_FlushFrame(SceneWrapper& wrapper, AutoComponentQuery<Form> c_form, AutoSingletonQuery<FrameRenderer> c_renderer, AutoThreadOrderQuery<FrameRenderer const>)
 	{
 		if (c_renderer.GetSingletons(wrapper))
 		{
@@ -86,7 +84,7 @@ namespace MapoToufu
 		
 	}
 
-	void Renderer_Dispath_renderer(SceneWrapper& wrapper, AutoSingletonQuery<FrameRenderer> c_renderer)
+	void RendererModule::Renderer_DispatchPass(SceneWrapper& wrapper, AutoSingletonQuery<FrameRenderer> c_renderer, AutoThreadOrderQuery<FrameRenderer const>)
 	{
 		if(c_renderer.GetSingletons(wrapper))
 		{
@@ -102,7 +100,7 @@ namespace MapoToufu
 		}
 	}
 
-	void Renderer_CommitedFormFrame(SceneWrapper& wrapper, AutoComponentQuery<Form> c_filter, AutoSingletonQuery<FrameRenderer> c_renderer)
+	void RendererModule::Renderer_CommitedFrame(SceneWrapper& wrapper, AutoComponentQuery<Form> c_filter, AutoSingletonQuery<FrameRenderer> c_renderer, AutoThreadOrderQuery<FrameRenderer>)
 	{
 		if (c_renderer.GetSingletons(wrapper))
 		{
@@ -120,6 +118,22 @@ namespace MapoToufu
 			for (auto& ite : span)
 			{
 				ite.form_wrapper->LogicPresent();
+				if(ite.is_primary)
+				{
+					ite.ForeachEvent([&](FormEvent const& event) ->FormEvent::Respond
+						{
+							if(event.IsModify())
+							{
+								auto modify = event.GetModify();
+								if(modify.message == decltype(modify.message)::DESTROY)
+								{
+									wrapper.GetContext().Quit();
+								}
+							}
+							return FormEvent::Respond::PASS;
+						}
+						);
+				}
 				ite.event_storage->SwapReceiveEvent();
 			}
 		}
@@ -131,52 +145,55 @@ namespace MapoToufu
 		f_renderer.frame_renderer = renderer->CreateFrameRenderer();
 		if (scene.AddSingleton(std::move(f_renderer)))
 		{
-
 			scene.CreateAndAddAutoSystem(
-				Renderer_CommitedFormFrame,
+				Renderer_CommitedFrame,
 				{
-					{ config.priority_layout, config.priority_first, 0, 0 },
-					u8"renderer_module:renderer_commit_renderer_frame"
+					{ config.render_layer, config.render_priority_first, config.render_priority_second, 0 },
+					u8"renderer_module%commit_frame"
 				}
 			);
 
 
 			scene.CreateAndAddAutoSystem(
-				Renderer_Dispath_renderer,
+				Renderer_DispatchPass,
 				{
-				{ config.priority_layout, config.priority_first, 1, 0 },
-				u8"renderer_module:renderer_commit_dispatch"
+				{ config.render_layer, config.render_priority_first, config.render_priority_second, 1 },
+				u8"renderer_module%dispatch_pass"
 				});
 
 
 			scene.CreateAndAddAutoSystem(
-				Renderer_FlushFormFrame,
+				Renderer_FlushFrame,
 				{
-					{config.priority_layout, config.priority_first, 2, 0 },
-					u8"renderer_flush_renderer_frame"
+					{config.render_layer, config.render_priority_first, config.render_priority_second, 2 },
+					u8"renderer_module%flush_frame"
 				}
 			);
+
 			return true;
 		}
 		return false;
 	}
 
-	bool RendererModule::CreateForm(Entity& entity, Scene& scene)
+	bool RendererModule::CreateForm(Entity& entity, Scene& scene, FormConfig const& config)
 	{
 
-		Dumpling::Form::Config config;
+		Dumpling::Form::Config real_config = config;
 		auto storage = FormEventStorage::Create();
-		config.event_capture = storage;
+		real_config.event_capture = storage;
 
-		auto form = Dumpling::Form::Create(std::move(config));
+		auto form = Dumpling::Form::Create(std::move(real_config));
 		if(form)
 		{
 			auto wrapper = renderer->CreateFormWrapper(form, {});
 			if(wrapper)
 			{
 				wrapper->LogicPresent();
-				Form real_form{ std::move(form), std::move(wrapper), std::move(storage)};
-
+				Form real_form;
+				real_form.form = std::move(form);
+				real_form.is_primary = config.is_primary;
+				real_form.event_storage = std::move(storage);
+				real_form.form_wrapper = wrapper;
 				if (scene.AddEntityComponent(entity, std::move(real_form)))
 				{
 					return true;

@@ -29,6 +29,8 @@ struct Printer
 
 using namespace MapoToufu;
 
+
+
 int main()
 {
 
@@ -52,7 +54,7 @@ int main()
 			return std::fmod(color + speed * time, 2.0f);
 		};
 
-
+	/*
 	auto ptr2 = scene->CreateAndAddAutoSystem([](SceneWrapper& wrapper, AutoComponentQuery<Form> comp_query)
 		{
 			if (comp_query.IterateComponent(wrapper, 0))
@@ -82,8 +84,9 @@ int main()
 				}
 			}
 		}, {{0, 1, 2, 3}, {u8"event_func"}});
+		*/
 
-	auto ptr = scene->CreateAndAddAutoSystem([&](SceneWrapper& wrapper, AutoComponentQuery<Form> comp_query, AutoSingletonQuery<FrameRenderer> sing_query)
+	auto ptr = scene->CreateAutoSystem([&](SceneWrapper& wrapper, AutoComponentQuery<Form> comp_query, AutoSingletonQuery<FrameRenderer> sing_query)
 	{
 			//auto k = context.GetContext().CreateAutomaticSystem([](AtomicComponentFilter<Form>) {});
 			//context.AddTemporarySystemNode(*k, {});
@@ -111,7 +114,7 @@ int main()
 					for (auto& ite : span)
 					{
 						Dumpling::RenderTargetSet carrier;
-						carrier.AddRenderTarget(*ite.form_wrapper);
+						carrier.AddRenderTarget(*ite.GetResource());
 
 						renderer.SetRenderTargets(carrier);
 						renderer.ClearRendererTarget(0, new_color);
@@ -120,7 +123,7 @@ int main()
 				}
 			}
 		}
-	}, { {0, 1, 1, 2} });
+	});
 
 	scene->CreateAndAddAutoSystem([&](SceneWrapper& wrapper, AutoSingletonQuery<FrameRenderer> s_renderer)
 	{
