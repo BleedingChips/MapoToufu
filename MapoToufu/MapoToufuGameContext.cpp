@@ -21,6 +21,7 @@ namespace MapoToufu
 	{
 		Potato::Task::Context::ThreadExecuteContext context;
 		bool continue_loop = true;
+		std::size_t count = 0;
 		while(continue_loop)
 		{
 			while(true)
@@ -37,6 +38,12 @@ namespace MapoToufu
 			}
 			task_context.ExecuteContextThreadOnce(context, std::chrono::steady_clock::now(), GetMainLoopGroupID());
 			std::this_thread::yield();
+			count += 1;
+			if (count >= 100)
+			{
+				if (task_context.CheckNodeSequencerEmpty())
+					continue_loop = false;
+			}
 		}
 		task_context.ExecuteContextThreadUntilNoExistTask(GetMainLoopGroupID());
 	}

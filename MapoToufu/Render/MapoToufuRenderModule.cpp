@@ -17,14 +17,6 @@ namespace MapoToufu
 
 	FormEvent::Respond FormEventStorage::RespondEvent(FormEvent event)
 	{
-		if (event.IsModify())
-		{
-			auto modify = event.GetModify();
-			if (modify.message == decltype(modify.message)::DESTROY)
-			{
-				Dumpling::Form::PostQuitEvent();
-			}
-		}
 		std::lock_guard lg(receive_mutex);
 		receive_events.emplace_back(std::move(event), false);
 		return FormEvent::Respond::PASS;
