@@ -9,54 +9,40 @@ import std;
 namespace MapoToufu
 {
 
-
-	GameContext::GameContext(Config in_config)
-		: config(std::move(in_config))
+	GameContext::GameContext()
 	{
-		task_context.AddGroupThread({}, std::thread::hardware_concurrency());
-		manager = Noodles::StructLayoutManager::Create();
+		if (std::thread::hardware_concurrency() >= 2)
+		{
+			Potato::Task::ThreadProperty thread_property;
+			thread_property.acceptable_mask = static_cast<std::size_t>(ThreadMask::PlatformThread);
+			task_context.CreateThreads(1, thread_property);
+		}
+
+		if (std::thread::hardware_concurrency() >= 3)
+		{
+			Potato::Task::ThreadProperty thread_property;
+			thread_property.acceptable_mask = ~static_cast<std::size_t>(ThreadMask::PlatformThread);
+			task_context.CreateThreads(std::thread::hardware_concurrency() - 2, thread_property);
+		}
+		
 	}
 
 	void GameContext::Loop()
 	{
-		Potato::Task::Context::ThreadExecuteContext context;
-		bool continue_loop = true;
-		std::size_t count = 0;
-		while(continue_loop)
-		{
-			while(true)
-			{
-				auto re = Dumpling::Form::PeekMessageEventOnce();
-				if(re)
-				{
-					if(!*re)
-						break;
-				}else
-				{
-					continue_loop = false;
-				}
-			}
-			task_context.ExecuteContextThreadOnce(context, std::chrono::steady_clock::now(), GetMainLoopGroupID());
-			std::this_thread::yield();
-			count += 1;
-			if (count >= 100)
-			{
-				if (task_context.CheckNodeSequencerEmpty())
-					continue_loop = false;
-			}
-		}
-		task_context.ExecuteContextThreadUntilNoExistTask(GetMainLoopGroupID());
+		Potato::Task::ThreadProperty thread_property;
+		thread_property.acceptable_mask = ~static_cast<std::size_t>(ThreadMask::PlatformThread);
+		task_context.ExecuteContextThreadUntilNoExistTask(thread_property);
 	}
 
-	Scene::Ptr GameContext::CreateScene()
+	Instance::Ptr GameContext::CreatInstance(Instance::Config config)
 	{
-		auto ptr = Scene::Create(*manager, config.scene_resource);
+		auto ptr = Instance::Create(config);
 		return ptr;
 	}
 
-	bool GameContext::Launch(Scene& scene)
+	bool GameContext::Launch(Instance& scene)
 	{
-		return scene.Commited(task_context, {});
+		return scene.Commit(task_context);
 	}
 }
 

@@ -5,38 +5,22 @@ export module MapoToufuGameContext;
 import std;
 import Potato;
 import Dumpling;
-import MapoToufuScene;
+import MapoToufuInstance;
+import MapoToufuDefine;
 
 export namespace MapoToufu
 {
-	export struct GameContext;
-
-	export struct GameContext
+	struct GameContext
 	{
-
-		using FormEventCapturePlatform = Dumpling::FormEventCapturePlatform;
-		using FormEventCapture = Dumpling::FormEventCapture;
-
-		struct Config
-		{
-			std::pmr::memory_resource* scene_resource = std::pmr::get_default_resource();
-			std::pmr::memory_resource* renderer_resource = std::pmr::get_default_resource();
-		};
-
-		Scene::Ptr CreateScene();
+		Instance::Ptr CreatInstance(Instance::Config config = {});
+		
+		//Scene::Ptr CreateScene();
 		void Loop();
+		bool Launch(Instance& scene);
 
-		GameContext(Config config = {});
-
-		bool CommitTask(Potato::Task::Node& task, Potato::Task::Property property) { return task_context.Commit(task, std::move(property)); }
-		void InsertEventCapture(FormEventCapturePlatform::Ptr capture);
-		bool Launch(Scene& scene);
-		static std::size_t GetMainLoopGroupID() { return std::numeric_limits<std::size_t>::max(); }
+		GameContext();
 
 	protected:
-
-		Noodles::StructLayoutManager::Ptr manager;
-		Config const config;
 
 		Potato::Task::Context task_context;
 	};

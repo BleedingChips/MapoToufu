@@ -6,13 +6,19 @@ import std;
 import Potato;
 import Dumpling;
 import Noodles;
-import MapoToufuScene;
-import MapoToufuGameContext;
+import MapoToufuInstance;
 import MapoToufuRenderer;
+import MapoToufuModule;
 
 export namespace MapoToufu
 {
 
+
+
+
+
+
+	/*
 	export struct RendererModule;
 
 	using Dumpling::FormEvent;
@@ -88,6 +94,38 @@ export namespace MapoToufu
 	};
 
 
+	
+	*/
+
+	struct RendererModule : public Module
+	{
+
+		using Ptr = Potato::Pointer::IntrusivePtr<RendererModule, Wrapper>;
+
+		struct Config
+		{
+			std::pmr::memory_resource* resource = std::pmr::get_default_resource();
+		};
+
+		static Ptr Create(Config config = {});
+		virtual void Load(Instance& instance) override;
+		virtual void UnLoad(Context& context) override;
+
+	protected:
+
+		RendererModule();
+
+		Dumpling::Device::Ptr renderer;
+
+		friend struct RendererModule;
+	};
+
+
+
+
+
+
+	/*
 	export struct RendererModule : public Potato::IR::MemoryResourceRecordIntrusiveInterface
 	{
 
@@ -107,6 +145,7 @@ export namespace MapoToufu
 
 		static auto Create(Config config) -> Ptr;
 
+
 		bool CreateForm(Entity& entity, Scene& scene, FormConfig const& config = {});
 		bool CreateRenderer(Scene& scene);
 
@@ -121,5 +160,5 @@ export namespace MapoToufu
 		Dumpling::Device::Ptr renderer;
 		operator bool() const { return renderer; }
 	};
-
+	*/
 };

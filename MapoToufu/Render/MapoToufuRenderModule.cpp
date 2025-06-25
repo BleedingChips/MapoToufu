@@ -5,6 +5,82 @@ module MapoToufuRenderModule;
 namespace MapoToufu
 {
 
+	struct RendererModuleDefaultImplement : 
+		public RendererModule, 
+		public Potato::IR::MemoryResourceRecordIntrusiveInterface
+	{
+		virtual void AddModuleRef() const override { 
+			MemoryResourceRecordIntrusiveInterface::AddRef(); 
+		}
+		virtual void SubModuleRef() const override { MemoryResourceRecordIntrusiveInterface::SubRef(); }
+		RendererModuleDefaultImplement(Potato::IR::MemoryResourceRecord record) : MemoryResourceRecordIntrusiveInterface(record) {}
+	};
+
+	auto RendererModule::Create(Config config) -> Ptr
+	{
+		Dumpling::Device::InitDebugLayer();
+		auto render = Dumpling::Device::Create();
+		if (render)
+		{
+			auto re = Potato::IR::MemoryResourceRecord::Allocate<RendererModule>(config.resource);
+			if (re)
+			{
+				return new(re.Get()) RendererModuleDefaultImplement{ re };
+			}
+		}
+		return {};
+	}
+
+	RendererModule::RendererModule()
+	{
+		Dumpling::Device::InitDebugLayer();
+		renderer = Dumpling::Device::Create();
+	}
+
+	struct FormMessageLoop : public SystemNode
+	{
+		AutoComponentQuery<Form>::Wrapper form_query;
+		virtual void AddSystemNodeRef() const override {}
+		virtual void SubSystemNodeRef() const override {}
+
+
+		virtual void Init(SystemInitializer& initializer)
+		{
+			form_query.Init(initializer);
+		}
+
+		virtual void SystemNodeExecute(Context& context)
+		{
+			volatile int i = 0;
+		}
+
+
+	}message_loop;
+
+	void RendererModule::Load(Instance& instance)
+	{
+		if (renderer)
+		{
+			FrameRenderer f_renderer;
+			f_renderer.frame_renderer = renderer->CreateFrameRenderer();
+			if (instance.AddSingleton(std::move(f_renderer)))
+			{
+				auto system_index = instance.PrepareSystemNode(&message_loop);
+				assert(system_index);
+				instance.LoadSystemNode(SystemCategory::Tick, system_index, {});
+			}
+		}
+	}
+
+	void RendererModule::UnLoad(Context& context)
+	{
+
+	}
+
+
+
+
+	/*
 	FormEventStorage::Ptr FormEventStorage::Create(std::pmr::memory_resource* resource)
 	{
 		auto ir = Potato::IR::MemoryResourceRecord::Allocate<FormEventStorage>(resource);
@@ -32,20 +108,7 @@ namespace MapoToufu
 	}
 
 
-	auto RendererModule::Create(Config config) -> Ptr
-	{
-		Dumpling::Device::InitDebugLayer();
-		auto render = Dumpling::Device::Create();
-		if(render)
-		{
-			auto re = Potato::IR::MemoryResourceRecord::Allocate<RendererModule>(std::pmr::get_default_resource());
-			if(re)
-			{
-				return new(re.Get()) RendererModule{re, config, std::move(render)};
-			}
-		}
-		return {};
-	}
+	
 
 	RendererModule::RendererModule(Potato::IR::MemoryResourceRecord record, Config config, Dumpling::Device::Ptr renderer)
 		: MemoryResourceRecordIntrusiveInterface(record), config(config), renderer(std::move(renderer))
@@ -195,4 +258,5 @@ namespace MapoToufu
 		}
 		return false;
 	}
+	*/
 }

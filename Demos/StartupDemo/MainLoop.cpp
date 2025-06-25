@@ -35,24 +35,31 @@ int main()
 {
 
 	GameContext context;
+	auto renderer_module = MapoToufu::RendererModule::Create();
+	auto instance = context.CreatInstance();
+	renderer_module->Load(*instance);
+	context.Launch(*instance);
+	context.Loop();
 
-	auto renderer_module = RendererModule::Create({});
+	//auto renderer_module = RendererModule::Create({});
 
 
-	auto scene = context.CreateScene();
+	//auto scene = context.CreateScene();
 
-	renderer_module->CreateRenderer(*scene);
+	//renderer_module->CreateRenderer(*scene);
 
-	auto ent = scene->CreateEntity();
+	//auto ent = scene->CreateEntity();
 
-	renderer_module->CreateForm(*ent, *scene);
+	//renderer_module->CreateForm(*ent, *scene);
 
-	Dumpling::Color color{ 0.0f, 0.0f, 0.0f, 1.0f };
+	//Dumpling::Color color{ 0.0f, 0.0f, 0.0f, 1.0f };
 
+	/*
 	auto Fun = [](float color, float speed, float time) -> float
 		{
 			return std::fmod(color + speed * time, 2.0f);
 		};
+		*/
 
 	/*
 	auto ptr2 = scene->CreateAndAddAutoSystem([](SceneWrapper& wrapper, AutoComponentQuery<Form> comp_query)
@@ -85,7 +92,7 @@ int main()
 			}
 		}, {{0, 1, 2, 3}, {u8"event_func"}});
 		*/
-
+	/*
 	auto ptr = scene->CreateAutoSystem([&](SceneWrapper& wrapper, AutoComponentQuery<Form> comp_query, AutoSingletonQuery<FrameRenderer> sing_query)
 	{
 			//auto k = context.GetContext().CreateAutomaticSystem([](AtomicComponentFilter<Form>) {});
@@ -136,11 +143,12 @@ int main()
 			}
 		}
 	}, { {0, 1, 1, 1} });
+	*/
 
-	context.Launch(*scene);
-	context.Loop();
+	//context.Launch(*scene);
+	//context.Loop();
 
-	volatile int i = 0;
+	//volatile int i = 0;
 
 
 	/*

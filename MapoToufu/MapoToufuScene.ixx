@@ -12,15 +12,22 @@ export namespace MapoToufu
 
 	using Noodles::AutoComponentQuery;
 	using Noodles::AutoSingletonQuery;
-	using Noodles::AutoThreadOrderQuery;
 
 	using SceneWrapper = Noodles::ContextWrapper;
 	using Entity = Noodles::Entity;
 	using SystemNode = Noodles::SystemNode;
 
-	struct Scene : public Noodles::Context, public Potato::IR::MemoryResourceRecordIntrusiveInterface
+
+
+
+
+	/*
+	struct Instance : public Noodles::Instance
 	{
-		using Ptr = Potato::Pointer::IntrusivePtr<Scene>;
+
+		using Ptr = Potato::Pointer::IntrusivePtr<Instance>;
+
+		static Ptr Create();
 
 		static Ptr Create(Noodles::StructLayoutManager& manager, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
 
@@ -48,7 +55,7 @@ export namespace MapoToufu
 	{
 		return Noodles::CreateAndAddAutomaticSystem(*this, std::forward<FuncT>(func), std::move(property), resource);
 	}
-
+	*/
 	
 };
 
