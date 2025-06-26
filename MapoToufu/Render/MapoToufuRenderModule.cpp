@@ -22,7 +22,7 @@ namespace MapoToufu
 		auto render = Dumpling::Device::Create();
 		if (render)
 		{
-			auto re = Potato::IR::MemoryResourceRecord::Allocate<RendererModule>(config.resource);
+			auto re = Potato::IR::MemoryResourceRecord::Allocate<RendererModuleDefaultImplement>(config.resource);
 			if (re)
 			{
 				return new(re.Get()) RendererModuleDefaultImplement{ re };
@@ -37,6 +37,82 @@ namespace MapoToufu
 		renderer = Dumpling::Device::Create();
 	}
 
+	SystemNode::Ptr RendererFunction_Commited()
+	{
+		static auto commited_system = AutoSystemNodeStatic(
+			[](
+				Context& context,
+				AutoComponentQuery<Form> comp_q,
+				AutoSingletonQuery<FrameRenderer> single_q
+				)
+			{
+
+				auto render_query = single_q.Query(context);
+				if (render_query.has_value())
+				{
+					auto render = render_query->GetPointer<0>();
+					if (render != nullptr && render->frame_renderer)
+					{
+						render->frame_renderer->CommitFrame();
+					}
+				}
+
+				comp_q.Foreach(context,
+					[](decltype(comp_q)::Data& output) -> bool {
+						auto span = output.Get<0>();
+						for (auto& ite : span)
+						{
+							if (ite.form_wrapper)
+							{
+								ite.form_wrapper->LogicPresent();
+							}
+						}
+						return false;
+					}
+				);
+			});
+		return &commited_system;
+	}
+
+	SystemNode::Ptr RendererFunction_Flush()
+	{
+		static auto commited_system = AutoSystemNodeStatic(
+			[](
+				Context& context,
+				AutoComponentQuery<Form> comp_q,
+				AutoSingletonQuery<FrameRenderer> single_q
+				)
+			{
+
+				auto render_query = single_q.Query(context);
+				if (render_query.has_value())
+				{
+					auto render = render_query->GetPointer<0>();
+					if (render != nullptr && render->frame_renderer)
+					{
+						render->frame_renderer->FlushToLastFrame();
+					}
+				}
+
+				comp_q.Foreach(context,
+					[](decltype(comp_q)::Data& output) -> bool {
+						auto span = output.Get<0>();
+						for (auto& ite : span)
+						{
+							if (ite.form_wrapper)
+							{
+								ite.form_wrapper->Present();
+							}
+						}
+						return false;
+					}
+				);
+			});
+		return &commited_system;
+	}
+
+
+	/*
 	struct FormMessageLoop : public SystemNode
 	{
 		AutoComponentQuery<Form>::Wrapper form_query;
@@ -56,6 +132,7 @@ namespace MapoToufu
 
 
 	}message_loop;
+	*/
 
 	void RendererModule::Load(Instance& instance)
 	{
@@ -65,9 +142,12 @@ namespace MapoToufu
 			f_renderer.frame_renderer = renderer->CreateFrameRenderer();
 			if (instance.AddSingleton(std::move(f_renderer)))
 			{
-				auto system_index = instance.PrepareSystemNode(&message_loop);
-				assert(system_index);
-				instance.LoadSystemNode(SystemCategory::Tick, system_index, {});
+				auto commited_sys_index = instance.PrepareSystemNode(RendererFunction_Commited());
+				assert(commited_sys_index);
+				instance.LoadSystemNode(SystemCategory::Tick, commited_sys_index, {});
+				auto flush_sys_index = instance.PrepareSystemNode(RendererFunction_Flush());
+				assert(flush_sys_index);
+				instance.LoadSystemNode(SystemCategory::Tick, flush_sys_index, {});
 			}
 		}
 	}

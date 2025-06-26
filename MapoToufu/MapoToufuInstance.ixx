@@ -20,5 +20,7 @@ export namespace MapoToufu
 	using Noodles::CreateAutoSystemNode;
 	using SystemCategory = Noodles::SystemCategory;
 	using SystemInitializer = Noodles::SystemInitializer;
+	using Noodles::AutoSystemNodeStatic;
+	using AutoComponentQuertIterator = Noodles::AutoComponentQueryIterator;
 };
 
