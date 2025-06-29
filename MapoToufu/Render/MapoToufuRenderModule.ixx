@@ -13,109 +13,40 @@ import MapoToufuModule;
 export namespace MapoToufu
 {
 
-
-
-
-
-
-	/*
-	export struct RendererModule;
-
-	using Dumpling::FormEvent;
-
-	struct FormEventStorage : public Dumpling::FormEventCapture, public Potato::IR::MemoryResourceRecordIntrusiveInterface
-	{
-
-		using Ptr = Potato::Pointer::IntrusivePtr<FormEventStorage, Dumpling::FormEventCapture::Wrapper>;
-
-		static Ptr Create(std::pmr::memory_resource* resource = std::pmr::get_default_resource());
-
-		template<typename Type>
-		void ForeachEvent(Type&& type) requires(std::is_invocable_r_v<FormEvent::Respond, Type, FormEvent&>)
-		{
-			std::lock_guard lg(respond_mutex);
-			for (auto& ite : respond_events)
-			{
-				if (!ite.has_captured)
-				{
-					FormEvent::Respond re = type(ite.event);
-					if (re == FormEvent::Respond::CAPTURED)
-					{
-						ite.has_captured = true;
-					}
-				}
-			}
-		}
-
-		void SwapReceiveEvent();
-
-	protected:
-
-		FormEventStorage(Potato::IR::MemoryResourceRecord record) : MemoryResourceRecordIntrusiveInterface(record) {}
-
-		void AddFormEventCaptureRef() const override { MemoryResourceRecordIntrusiveInterface::AddRef(); }
-		void SubFormEventCaptureRef() const override { MemoryResourceRecordIntrusiveInterface::SubRef(); }
-		FormEvent::Respond RespondEvent(FormEvent event) override;
-
-		struct Event
-		{
-			FormEvent event;
-			bool has_captured = false;
-		};
-
-		std::mutex respond_mutex;
-		std::pmr::vector<Event> respond_events;
-
-		std::mutex receive_mutex;
-		std::pmr::vector<Event> receive_events;
-	};
-
-
-
-	struct Form
-	{
-
-		template<typename Type>
-		void ForeachEvent(Type&& type) requires(std::is_invocable_r_v<FormEvent::Respond, Type, FormEvent&>)
-		{
-			event_storage->ForeachEvent(std::forward<Type>(type));
-		}
-
-		virtual Dumpling::RendererResource::Ptr GetResource() { return form_wrapper->GetAvailableRenderResource(); }
-
-	protected:
-
-		Dumpling::Form  form;
-		Dumpling::FormWrapper::Ptr form_wrapper;
-		FormEventStorage::Ptr event_storage;
-		bool is_primary = true;
-
-		friend struct RendererModule;
-	};
-
-
 	
-	*/
 
-	struct RendererModule : public Module
+	struct RendererModule : public Module, public Potato::Task::Node
 	{
+		static constexpr std::wstring_view module_name = L"MapoTouFuRenderer";
 
-		using Ptr = Potato::Pointer::IntrusivePtr<RendererModule, Wrapper>;
+		using Ptr = Potato::Pointer::IntrusivePtr<RendererModule, Module::Wrapper>;
 
 		struct Config
 		{
+			ModulePriority priority;
 			std::pmr::memory_resource* resource = std::pmr::get_default_resource();
 		};
 
 		static Ptr Create(Config config = {});
+
+		bool AddFormComponent(Instance& instance, Entity& target_entity);
+		void AddPass(Instance& instance, Instance::SystemIndex index, SystemNode::Parameter parameter = {});
+
+		virtual void Init(GameContext& context) override;
 		virtual void Load(Instance& instance) override;
 		virtual void UnLoad(Context& context) override;
 
 	protected:
 
-		RendererModule();
+		virtual void TaskExecute(Potato::Task::Context& context, Parameter& parameter) override;
 
+		RendererModule(Config config);
+
+		ModulePriority priority;
 		Dumpling::Device::Ptr renderer;
+
+		std::shared_mutex event_capture_mutex;
+		std::pmr::vector<Dumpling::FormEventCapture::Ptr> captures;
 
 		friend struct RendererModule;
 	};

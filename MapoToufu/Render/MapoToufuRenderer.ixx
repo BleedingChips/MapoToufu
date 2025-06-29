@@ -7,29 +7,17 @@ import Potato;
 import Dumpling;
 import Noodles;
 import MapoToufuInstance;
-import MapoToufuGameContext;
+import MapoToufuDefine;
+import MapoToufuRenderPass;
 
 export namespace MapoToufu
 {
 
-	using FormEvent = Dumpling::FormEvent;
-
 	struct Form;
 
-	struct FormEventResponder
+	struct FormConfig
 	{
-		struct Wrapper
-		{
-			void AddRef(FormEventResponder const* ptr) { ptr->AddFormEventResponderRef(); }
-			void SubRef(FormEventResponder const* ptr) { ptr->SubFormEventResponderRef(); }
-		};
 
-		using Ptr = Potato::Pointer::IntrusivePtr<FormEventResponder, Wrapper>;
-		virtual FormEvent::Respond Respond(Context& context, Form& form, Entity const& entity, FormEvent event) { return FormEvent::Respond::PASS; }
-
-	protected:
-		virtual void AddFormEventResponderRef() const = 0;
-		virtual void SubFormEventResponderRef() const = 0;
 	};
 
 	struct FormEventCapture : public Dumpling::FormEventCapture
@@ -38,25 +26,28 @@ export namespace MapoToufu
 
 		using Ptr = Potato::Pointer::IntrusivePtr<FormEventCapture, Wrapper>;
 
-		static Ptr Create(bool top_windows = true, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
+		static Ptr Create(FormConfig config = {}, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
 
-		void ComsumeFormEvent(Context& context);
+		virtual void Update(Context& context, Entity& owner, Form& form) = 0;
 
 	public:
 
-		std::mutex respond_mutex;
-		std::pmr::vector<FormEventResponder::Ptr> responder;
-
-		std::pmr::vector<FormEvent> fronet_end_event;
-
-		std::mutex form_event;
-		std::pmr::vector<FormEvent> back_end_event;
 	};
 
-	export struct FrameRenderer
+	
+
+
+	struct FrameRenderer
 	{
+		FrameRenderer(FrameRenderer const&) = default;
+		FrameRenderer(FrameRenderer&&) = default;
+		FrameRenderer(Dumpling::FrameRenderer::Ptr renderer) : frame_renderer(std::move(renderer)) {}
+		bool BeginPass(Dumpling::PassRenderer& pass_renderer) const;
+		bool EndPass(Dumpling::PassRenderer& pass_renderer) const;
+		bool CommitFrame() { return frame_renderer->CommitFrame().has_value(); }
+		bool FlushFrame() { return frame_renderer->FlushToLastFrame(); }
+	protected:
 		Dumpling::FrameRenderer::Ptr frame_renderer;
-		std::pmr::vector<SystemNode::Ptr> reference_node;
 	};
 
 	struct Form

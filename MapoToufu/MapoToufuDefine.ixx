@@ -8,7 +8,9 @@ export namespace MapoToufu
 {
 	enum class ThreadMask : std::size_t
 	{
-		PlatformThread = 1,
+		MainThread = 1,
 	};
+
+	constexpr std::size_t operator*(ThreadMask mask) { return static_cast<std::size_t>(mask); }
 };
 

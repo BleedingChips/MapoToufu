@@ -6,7 +6,7 @@ import std;
 import Potato;
 import Dumpling;
 import Noodles;
-import MapoToufuScene;
+import MapoToufuInstance;
 import MapoToufuGameContext;
 
 export namespace MapoToufu
@@ -19,5 +19,13 @@ export namespace MapoToufu
 		Dumpling::PipelineInstance::Ptr instance;
 		Potato::IR::StructLayoutObject::Ptr pipeline_object;
 	};
+
+	struct PipelineInfo
+	{
+		Dumpling::PipelineRequester::Ptr requester;
+		Dumpling::PassRenderer pass_renderer;
+	};
+
+	using PipelineData = SystemUserDataDefault<PipelineInfo>;
 	
 };

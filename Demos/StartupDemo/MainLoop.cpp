@@ -9,25 +9,69 @@ import MapoToufu;
 struct A {};
 struct B {};
 
+using namespace MapoToufu;
 
-std::mutex P;
 
-struct Printer
+auto Fun = [](float color, float speed, float time) -> float
 {
-	char const* Str = nullptr;
-	Printer(char const* Str) : Str(Str)
-	{
-		//std::lock_guard lg(P);
-		//std::cout << Str << std::endl;
-	}
-	~Printer()
-	{
-		//std::lock_guard lg(P);
-		//std::cout << Str << std::endl;
-	}
+	return std::fmod(color + speed * time, 2.0f);
 };
 
-using namespace MapoToufu;
+
+Dumpling::Color color;
+
+
+
+
+auto clean_sys = AutoSystemNodeStatic(
+	[&](Context& context, AutoComponentQuery<Form const> comp_f, AutoSingletonQuery<FrameRenderer const > frame_render )
+	{
+
+		auto [render] = frame_render.Query(context)->GetPointerTuple();
+
+		Dumpling::PassRenderer pass;
+		render->BeginPass(pass);
+
+		color.R = Fun(
+			color.R, 0.2, context.GetInstance().GetDeltaTime().count()
+		);
+
+		color.G = Fun(
+			color.G, 0.3, context.GetInstance().GetDeltaTime().count()
+		);
+
+		color.B = Fun(
+			color.B, 0.4, context.GetInstance().GetDeltaTime().count()
+		);
+
+		Dumpling::Color new_color{ color };
+
+		new_color.R = std::abs(new_color.R - 1.0f);
+		new_color.G = std::abs(new_color.G - 1.0f);
+		new_color.B = std::abs(new_color.B - 1.0f);
+
+
+		comp_f.Foreach(context, [&](decltype(comp_f)::Data& data) -> bool {
+			for (auto ite : data)
+			{
+				auto [form] = ite;
+
+				Dumpling::RenderTargetSet sets;
+				sets.AddRenderTarget(*form->form_wrapper->GetAvailableRenderResource());
+
+				pass.SetRenderTargets(sets);
+				pass.ClearRendererTarget(0, new_color);
+			}
+			
+			return true;
+		});
+
+		render->EndPass(pass);
+	}
+);
+
+
+
 
 
 
@@ -37,9 +81,23 @@ int main()
 	GameContext context;
 	auto renderer_module = MapoToufu::RendererModule::Create();
 	auto instance = context.CreatInstance();
+	renderer_module->Init(context);
 	renderer_module->Load(*instance);
+
+	Dumpling::Color color{ 0.0f, 0.0f, 0.0f, 1.0f };
+
+	
+
+	auto clean_sys_index = instance->PrepareSystemNode(&clean_sys);
+
+	auto entity = instance->CreateEntity();
+
+	auto thread_id = std::this_thread::get_id();
+	renderer_module->AddPass(*instance, clean_sys_index);
+	renderer_module->AddFormComponent(*instance, *entity);
 	context.Launch(*instance);
 	context.Loop();
+	renderer_module->Destory(context);
 
 	//auto renderer_module = RendererModule::Create({});
 
