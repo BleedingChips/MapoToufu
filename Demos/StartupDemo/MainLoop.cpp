@@ -30,43 +30,46 @@ auto clean_sys = AutoSystemNodeStatic(
 		auto [render] = frame_render.Query(context)->GetPointerTuple();
 
 		Dumpling::PassRenderer pass;
-		render->BeginPass(pass);
+		if (render->BeginPass(pass))
+		{
+			color.R = Fun(
+				color.R, 0.2, context.GetInstance().GetDeltaTime().count()
+			);
 
-		color.R = Fun(
-			color.R, 0.2, context.GetInstance().GetDeltaTime().count()
-		);
+			color.G = Fun(
+				color.G, 0.3, context.GetInstance().GetDeltaTime().count()
+			);
 
-		color.G = Fun(
-			color.G, 0.3, context.GetInstance().GetDeltaTime().count()
-		);
+			color.B = Fun(
+				color.B, 0.4, context.GetInstance().GetDeltaTime().count()
+			);
 
-		color.B = Fun(
-			color.B, 0.4, context.GetInstance().GetDeltaTime().count()
-		);
+			Dumpling::Color new_color{ color };
 
-		Dumpling::Color new_color{ color };
-
-		new_color.R = std::abs(new_color.R - 1.0f);
-		new_color.G = std::abs(new_color.G - 1.0f);
-		new_color.B = std::abs(new_color.B - 1.0f);
+			new_color.R = std::abs(new_color.R - 1.0f);
+			new_color.G = std::abs(new_color.G - 1.0f);
+			new_color.B = std::abs(new_color.B - 1.0f);
 
 
-		comp_f.Foreach(context, [&](decltype(comp_f)::Data& data) -> bool {
-			for (auto ite : data)
-			{
-				auto [form] = ite;
+			comp_f.Foreach(context, [&](decltype(comp_f)::Data& data) -> bool {
+				for (auto ite : data)
+				{
+					auto [form] = ite;
 
-				Dumpling::RenderTargetSet sets;
-				sets.AddRenderTarget(*form->form_wrapper->GetAvailableRenderResource());
+					Dumpling::RenderTargetSet sets;
+					sets.AddRenderTarget(*form->form_wrapper->GetAvailableRenderResource());
 
-				pass.SetRenderTargets(sets);
-				pass.ClearRendererTarget(0, new_color);
-			}
-			
-			return true;
-		});
+					pass.SetRenderTargets(sets);
+					pass.ClearRendererTarget(0, new_color);
+				}
 
-		render->EndPass(pass);
+				return true;
+				});
+
+			render->EndPass(pass);
+		}
+
+		
 	}
 );
 

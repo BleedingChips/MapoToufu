@@ -7,13 +7,18 @@ import Potato;
 import Dumpling;
 import Noodles;
 import MapoToufuInstance;
+import MapoToufuRenderPass;
 import MapoToufuRenderer;
 import MapoToufuModule;
 
 export namespace MapoToufu
 {
 
-	
+	enum class RenderPlatform
+	{
+		DX12,
+		DoNotCare
+	};
 
 	struct RendererModule : public Module, public Potato::Task::Node
 	{
@@ -23,6 +28,7 @@ export namespace MapoToufu
 
 		struct Config
 		{
+			RenderPlatform platform = RenderPlatform::DoNotCare;
 			ModulePriority priority;
 			std::pmr::memory_resource* resource = std::pmr::get_default_resource();
 		};
@@ -36,12 +42,15 @@ export namespace MapoToufu
 		virtual void Load(Instance& instance) override;
 		virtual void UnLoad(Context& context) override;
 
+		PassIndex RegisterPass(Instance& instance, PassScription scription, SystemNode::Parameter parameter);
+
 	protected:
 
 		virtual void TaskExecute(Potato::Task::Context& context, Parameter& parameter) override;
 
 		RendererModule(Config config);
 
+		RenderPlatform platform;
 		ModulePriority priority;
 		Dumpling::Device::Ptr renderer;
 
@@ -50,46 +59,4 @@ export namespace MapoToufu
 
 		friend struct RendererModule;
 	};
-
-
-
-
-
-
-	/*
-	export struct RendererModule : public Potato::IR::MemoryResourceRecordIntrusiveInterface
-	{
-
-		struct Config
-		{
-			std::int32_t render_layer = 0;
-			std::int32_t render_priority_first = 0;
-			std::int32_t render_priority_second = 0;
-		};
-
-		struct FormConfig : Dumpling::Form::Config
-		{
-			bool is_primary = true;
-		};
-
-		using Ptr = Potato::Pointer::IntrusivePtr<RendererModule>;
-
-		static auto Create(Config config) -> Ptr;
-
-
-		bool CreateForm(Entity& entity, Scene& scene, FormConfig const& config = {});
-		bool CreateRenderer(Scene& scene);
-
-	protected:
-
-		RendererModule(Potato::IR::MemoryResourceRecord record, Config config, Dumpling::Device::Ptr renderer);
-		static void Renderer_CommitedFrame(SceneWrapper& wrapper, AutoComponentQuery<Form> c_filter, AutoSingletonQuery<FrameRenderer> c_renderer, AutoThreadOrderQuery<FrameRenderer> order);
-		static void Renderer_FlushFrame(SceneWrapper& wrapper, AutoComponentQuery<Form> c_form, AutoSingletonQuery<FrameRenderer> c_renderer, AutoThreadOrderQuery<FrameRenderer const> order);
-		static void Renderer_DispatchPass(SceneWrapper& wrapper, AutoSingletonQuery<FrameRenderer> c_renderer, AutoThreadOrderQuery<FrameRenderer const> order);
-
-		Config config;
-		Dumpling::Device::Ptr renderer;
-		operator bool() const { return renderer; }
-	};
-	*/
 };

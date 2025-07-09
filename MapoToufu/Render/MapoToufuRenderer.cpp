@@ -47,7 +47,8 @@ namespace MapoToufu
 
 	bool FrameRenderer::BeginPass(Dumpling::PassRenderer& pass_renderer) const
 	{
-		return frame_renderer->PopPassRenderer(pass_renderer);
+		return false;
+		//return frame_renderer->PopPassRenderer(pass_renderer);
 	}
 	bool FrameRenderer::EndPass(Dumpling::PassRenderer& pass_renderer) const
 	{

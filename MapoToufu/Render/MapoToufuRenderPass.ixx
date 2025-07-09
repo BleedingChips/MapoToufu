@@ -6,26 +6,17 @@ import std;
 import Potato;
 import Dumpling;
 import Noodles;
-import MapoToufuInstance;
-import MapoToufuGameContext;
 
 export namespace MapoToufu
 {
 
-	struct PipelineRequester
-	{
-		bool is_enable = false;
-		Dumpling::PipelineRequester::Ptr requester;
-		Dumpling::PipelineInstance::Ptr instance;
-		Potato::IR::StructLayoutObject::Ptr pipeline_object;
-	};
+	using PassScription = Dumpling::PassScription;
+	using PassSequencer = Dumpling::PassSequencer;
+	using PassIndex = Dumpling::PassIndex;
 
-	struct PipelineInfo
+	struct PassDistributor
 	{
-		Dumpling::PipelineRequester::Ptr requester;
-		Dumpling::PassRenderer pass_renderer;
+		Dumpling::PassDistributor distributor;
 	};
-
-	using PipelineData = SystemUserDataDefault<PipelineInfo>;
 	
 };

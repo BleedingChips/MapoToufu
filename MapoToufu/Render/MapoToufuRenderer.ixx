@@ -34,18 +34,23 @@ export namespace MapoToufu
 
 	};
 
-	
-
+	struct PassContext
+	{
+		bool enable = false;
+		Dumpling::PassRenderer render;
+		Dumpling::RenderTargetSet render_target;
+	};
 
 	struct FrameRenderer
 	{
 		FrameRenderer(FrameRenderer const&) = default;
 		FrameRenderer(FrameRenderer&&) = default;
 		FrameRenderer(Dumpling::FrameRenderer::Ptr renderer) : frame_renderer(std::move(renderer)) {}
-		bool BeginPass(Dumpling::PassRenderer& pass_renderer) const;
-		bool EndPass(Dumpling::PassRenderer& pass_renderer) const;
+		
 		bool CommitFrame() { return frame_renderer->CommitFrame().has_value(); }
 		bool FlushFrame() { return frame_renderer->FlushToLastFrame(); }
+		bool BeginPass(Dumpling::PassRenderer& pass_renderer) const;
+		bool EndPass(Dumpling::PassRenderer& pass_renderer) const;
 	protected:
 		Dumpling::FrameRenderer::Ptr frame_renderer;
 	};

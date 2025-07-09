@@ -120,14 +120,23 @@ namespace MapoToufu
 	SystemNode::Ptr RendererFunction_Dispatch()
 	{
 		static auto dispatch_system = AutoSystemNodeStatic(
-			[](Context& context, AutoSingletonQuery<FrameRenderer> single_q)
+			[](Context& context, AutoComponentQuery<Form> component,  AutoSingletonQuery<FrameRenderer> singleton)
 			{
-				if (auto outputr = single_q.Query(context))
-				{
-					if (auto [frame_renderer] = outputr->GetPointerTuple(); frame_renderer != nullptr)
-					{
+				auto [form] = singleton.Query(context)->GetPointerTuple();
 
-					}
+				if (form != nullptr)
+				{
+					component.Foreach(context, [](decltype(component)::Data& data) -> bool {
+						for (auto ite : data)
+						{
+							auto [form] = ite;
+							if (form != nullptr)
+							{
+								//for(auto& ite : )
+							}
+						}
+						return false;
+						});
 				}
 			});
 		return &dispatch_system;
@@ -266,11 +275,6 @@ namespace MapoToufu
 		parameter.priority.second = 5;
 
 		instance.LoadSystemNode(SystemCategory::Tick, index, std::move(parameter));
-	}
-
-	PassIndex RendererModule::RegisterPass(Instance& instance, PassScription scription, SystemNode::Parameter parameter)
-	{
-		return {};
 	}
 
 	/*
