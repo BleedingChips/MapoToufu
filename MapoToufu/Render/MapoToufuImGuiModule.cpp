@@ -268,6 +268,7 @@ namespace MapoToufu
 		return false;
 	}
 
+	/*
 	void RendererModule::AddPass(Instance& instance, Instance::SystemIndex index, SystemNode::Parameter parameter)
 	{
 		parameter.layer = priority.layer;
@@ -276,6 +277,7 @@ namespace MapoToufu
 
 		instance.LoadSystemNode(SystemCategory::Tick, index, std::move(parameter));
 	}
+	*/
 
 	/*
 	FormEventStorage::Ptr FormEventStorage::Create(std::pmr::memory_resource* resource)

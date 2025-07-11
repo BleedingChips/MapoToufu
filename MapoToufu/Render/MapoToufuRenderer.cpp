@@ -45,12 +45,12 @@ namespace MapoToufu
 		return {};
 	}
 
-	bool FrameRenderer::BeginPass(Dumpling::PassRenderer& pass_renderer) const
+	bool FrameRenderer::BeginPass(PassRenderer& pass_renderer, PassRequest const& request) const
 	{
-		return false;
-		//return frame_renderer->PopPassRenderer(pass_renderer);
+		return frame_renderer->PopPassRenderer(pass_renderer, request);
 	}
-	bool FrameRenderer::EndPass(Dumpling::PassRenderer& pass_renderer) const
+
+	bool FrameRenderer::EndPass(PassRenderer& pass_renderer) const
 	{
 		return frame_renderer->FinishPassRenderer(pass_renderer);
 	}

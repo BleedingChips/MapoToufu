@@ -23,7 +23,5 @@ export namespace MapoToufu
 	using Noodles::AutoSystemNodeStatic;
 	using AutoComponentQuertIterator = Noodles::AutoComponentQueryIterator;
 	using EntityProperty = Noodles::EntityProperty;
-	using Noodles::SystemUserData;
-	using Noodles::SystemUserDataDefault;
 };
 

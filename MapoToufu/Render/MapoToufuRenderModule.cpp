@@ -259,6 +259,7 @@ namespace MapoToufu
 		return false;
 	}
 
+	/*
 	void RendererModule::AddPass(Instance& instance, Instance::SystemIndex index, SystemNode::Parameter parameter)
 	{
 		parameter.layer = priority.layer;
@@ -268,10 +269,14 @@ namespace MapoToufu
 		instance.LoadSystemNode(SystemCategory::Tick, index, std::move(parameter));
 	}
 
-	PassIndex RendererModule::RegisterPass(Instance& instance, PassScription scription, SystemNode::Parameter parameter)
+	PassIndex RendererModule::RegisterPass(Instance& instance, Instance::SystemIndex index, SystemNode::Parameter parameter)
 	{
-		return {};
+		auto init_system = CreateAutoSystemNode(
+			[=](AutoSingletonQuery<PassDistributor>)
+		);
+		instance.PrepareSystemNode()
 	}
+	*/
 
 	/*
 	FormEventStorage::Ptr FormEventStorage::Create(std::pmr::memory_resource* resource)

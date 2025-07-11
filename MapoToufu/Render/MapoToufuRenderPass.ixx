@@ -10,13 +10,9 @@ import Noodles;
 export namespace MapoToufu
 {
 
-	using PassScription = Dumpling::PassScription;
 	using PassSequencer = Dumpling::PassSequencer;
+	using PassRequest = Dumpling::PassRequest;
 	using PassIndex = Dumpling::PassIndex;
-
-	struct PassDistributor
-	{
-		Dumpling::PassDistributor distributor;
-	};
+	using PassDistributor = Dumpling::PassDistributor;
 	
 };

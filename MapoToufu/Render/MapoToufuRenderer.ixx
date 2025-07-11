@@ -34,12 +34,7 @@ export namespace MapoToufu
 
 	};
 
-	struct PassContext
-	{
-		bool enable = false;
-		Dumpling::PassRenderer render;
-		Dumpling::RenderTargetSet render_target;
-	};
+	using PassRenderer = Dumpling::PassRenderer;
 
 	struct FrameRenderer
 	{
@@ -49,8 +44,8 @@ export namespace MapoToufu
 		
 		bool CommitFrame() { return frame_renderer->CommitFrame().has_value(); }
 		bool FlushFrame() { return frame_renderer->FlushToLastFrame(); }
-		bool BeginPass(Dumpling::PassRenderer& pass_renderer) const;
-		bool EndPass(Dumpling::PassRenderer& pass_renderer) const;
+		bool BeginPass(PassRenderer& pass_renderer, PassRequest const& request) const;
+		bool EndPass(PassRenderer& pass_renderer) const;
 	protected:
 		Dumpling::FrameRenderer::Ptr frame_renderer;
 	};

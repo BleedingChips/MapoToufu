@@ -18,62 +18,44 @@ auto Fun = [](float color, float speed, float time) -> float
 };
 
 
-Dumpling::Color color;
-
-
+struct CleanPassParameter
+{
+	Dumpling::Color color;
+	Dumpling::RenderTargetSet rt_set;
+};
 
 
 auto clean_sys = AutoSystemNodeStatic(
-	[&](Context& context, AutoComponentQuery<Form const> comp_f, AutoSingletonQuery<FrameRenderer const > frame_render )
+	[&](Context& context, AutoComponentQuery<Form const> comp_f, AutoSingletonQuery<FrameRenderer const, PassDistributor const> frame_render )
 	{
+		auto [render, distrubutor] = frame_render.Query(context)->GetPointerTuple();
 
-		auto [render] = frame_render.Query(context)->GetPointerTuple();
+		if (render == nullptr || distrubutor == nullptr)
+			return;
 
-		Dumpling::PassRenderer pass;
-		if (render->BeginPass(pass))
+		auto index = distrubutor->GetPassIndex(L"CleanScreanPass");
+		std::size_t iterator = 0;
+		PassRequest request;
+		PassRenderer pass_render;
+		while (distrubutor->PopRequest(index, request, iterator))
 		{
-			color.R = Fun(
-				color.R, 0.2, context.GetInstance().GetDeltaTime().count()
-			);
-
-			color.G = Fun(
-				color.G, 0.3, context.GetInstance().GetDeltaTime().count()
-			);
-
-			color.B = Fun(
-				color.B, 0.4, context.GetInstance().GetDeltaTime().count()
-			);
-
-			Dumpling::Color new_color{ color };
-
-			new_color.R = std::abs(new_color.R - 1.0f);
-			new_color.G = std::abs(new_color.G - 1.0f);
-			new_color.B = std::abs(new_color.B - 1.0f);
-
-
-			comp_f.Foreach(context, [&](decltype(comp_f)::Data& data) -> bool {
-				for (auto ite : data)
+			++iterator;
+			if (render->BeginPass(pass_render, request))
+			{
+				if (request.property && request.property->GetStructLayout()->IsStatic<CleanPassParameter>())
 				{
-					auto [form] = ite;
-
-					Dumpling::RenderTargetSet sets;
-					sets.AddRenderTarget(*form->form_wrapper->GetAvailableRenderResource());
-
-					pass.SetRenderTargets(sets);
-					pass.ClearRendererTarget(0, new_color);
+					auto parameter = request.property->GetStaticCastData<CleanPassParameter const>();
+					if (parameter != nullptr)
+					{
+						pass_render.SetRenderTargets(parameter->rt_set);
+						pass_render.ClearRendererTarget(0, parameter->color);
+					}
 				}
-
-				return true;
-				});
-
-			render->EndPass(pass);
+				render->EndPass(pass_render);
+			}
 		}
-
-		
 	}
 );
-
-
 
 
 
@@ -82,22 +64,30 @@ int main()
 {
 
 	GameContext context;
-	auto renderer_module = MapoToufu::RendererModule::Create();
+	RendererModule::Config config;
+	config.priority.layer = 0;
+	config.priority.primary_priority = 100;
+	auto renderer_module = MapoToufu::RendererModule::Create(config);
 	auto instance = context.CreatInstance();
 	renderer_module->Init(context);
 	renderer_module->Load(*instance);
-
-	Dumpling::Color color{ 0.0f, 0.0f, 0.0f, 1.0f };
-
-	
 
 	auto clean_sys_index = instance->PrepareSystemNode(&clean_sys);
 
 	auto entity = instance->CreateEntity();
 
 	auto thread_id = std::this_thread::get_id();
-	renderer_module->AddPass(*instance, clean_sys_index);
 	renderer_module->AddFormComponent(*instance, *entity);
+
+	{
+		Instance::SystemInfo system_info;
+		instance->PrepareSystemNode(&clean_sys, system_info);
+	}
+	
+	{
+
+	}
+
 	context.Launch(*instance);
 	context.Loop();
 	renderer_module->Destory(context);

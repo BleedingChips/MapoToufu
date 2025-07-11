@@ -36,13 +36,9 @@ export namespace MapoToufu
 		static Ptr Create(Config config = {});
 
 		bool AddFormComponent(Instance& instance, Entity& target_entity);
-		void AddPass(Instance& instance, Instance::SystemIndex index, SystemNode::Parameter parameter = {});
-
 		virtual void Init(GameContext& context) override;
 		virtual void Load(Instance& instance) override;
 		virtual void UnLoad(Context& context) override;
-
-		PassIndex RegisterPass(Instance& instance, PassScription scription, SystemNode::Parameter parameter);
 
 	protected:
 
