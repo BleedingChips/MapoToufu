@@ -5,28 +5,18 @@ module MapoToufuRenderer;
 
 namespace MapoToufu
 {
-	struct FormEventCaptureDefault : public FormEventCapture, public Potato::IR::MemoryResourceRecordIntrusiveInterface
+
+	struct TopFormEventHook : public Dumpling::FormEventHook, public Potato::IR::MemoryResourceRecordIntrusiveInterface
 	{
-		FormEventCaptureDefault(Potato::IR::MemoryResourceRecord record, FormConfig config)
-			: MemoryResourceRecordIntrusiveInterface(record) {
-		}
-		virtual HRESULT RespondEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) override
+		virtual FormEvent::Respond Hook(FormEvent& event) override
 		{
-			if (msg == WM_CLOSE)
+			if (event.IsFormDestory())
 			{
-				need_quit = true;
 				Dumpling::Form::PostQuitEvent();
 			}
-			return DefWindowProcW(hWnd, msg, wParam, lParam);
+			return event.RespondMarkAsSkip();
 		}
 
-		virtual void Update(Context& context, Entity& owner, Form& form)
-		{
-			if (need_quit)
-			{
-				context.GetInstance().RequireQuit();
-			}
-		}
 	protected:
 
 		std::atomic_bool need_quit = false;
@@ -34,6 +24,7 @@ namespace MapoToufu
 		virtual void AddFormEventCaptureRef() const { MemoryResourceRecordIntrusiveInterface::AddRef(); }
 		virtual void SubFormEventCaptureRef() const { MemoryResourceRecordIntrusiveInterface::SubRef(); }
 	};
+	
 
 	FormEventCapture::Ptr FormEventCapture::Create(FormConfig config, std::pmr::memory_resource* resource)
 	{
@@ -44,6 +35,7 @@ namespace MapoToufu
 		}
 		return {};
 	}
+	*/
 
 	bool FrameRenderer::BeginPass(PassRenderer& pass_renderer, PassRequest const& request) const
 	{

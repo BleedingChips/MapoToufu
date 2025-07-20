@@ -16,8 +16,6 @@ target("MapoToufu")
     add_deps("Potato")
     add_deps("Noodles")
     add_deps("Dumpling")
-    add_deps("DumplingImGui")
-    add_deps("DumplingHLSLComplier")
 target_end()
 
 

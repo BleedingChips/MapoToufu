@@ -1,6 +1,9 @@
+add_rules("mode.debug", "mode.release")
+set_languages("cxxlatest")
+
 set_project("StartupDemo")
 target("StartupDemo")
-    set_targetdir("Binary/$(mode)/$(arch)")
+    --set_targetdir("Binary/$(mode)/$(arch)")
     set_kind("binary")
     add_files("*.cpp")
     add_deps("MapoToufu")

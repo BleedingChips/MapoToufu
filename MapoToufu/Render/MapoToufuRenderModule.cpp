@@ -35,7 +35,7 @@ namespace MapoToufu
 	}
 
 	RendererModule::RendererModule(Config config)
-		: platform(config.platform), priority(config.priority)
+		: init_config(config)
 	{
 		Dumpling::Device::InitDebugLayer();
 		renderer = Dumpling::Device::Create();
@@ -87,6 +87,7 @@ namespace MapoToufu
 				AutoSingletonQuery<FrameRenderer> single_q
 				)
 			{
+				/*
 				comp_q.Foreach(context,
 					[&](decltype(comp_q)::Data& output) -> bool {
 						for (auto ite : output)
@@ -103,6 +104,7 @@ namespace MapoToufu
 						return true;
 					}
 				);
+				*/
 
 				auto render_query = single_q.Query(context);
 				if (render_query.has_value())
@@ -138,21 +140,12 @@ namespace MapoToufu
 		while (true)
 		{
 			auto re = Dumpling::Form::PeekMessageEventOnce(
-				[](void* data, HWND hwnd, UINT uint, WPARAM wpar, LPARAM lpar) -> HRESULT
+				[this](Dumpling::FormEvent& event) -> Dumpling::FormEvent::Respond
 				{
-					auto ptr = static_cast<RendererModule*>(data);
-					std::shared_lock sm(ptr->event_capture_mutex);
-					for (auto& ite : ptr->captures)
-					{
-						HRESULT re = ite->RespondEvent(hwnd, uint, wpar, lpar);
-						if (FormEventCapture::IsRespondMarkAsCaptured(re, hwnd, uint, wpar, lpar))
-						{
-							return re;
-						}
-					}
-					return FormEventCapture::RespondMarkAsSkip(hwnd, uint, wpar, lpar);
-				},
-				this
+					if(init_config.enable_imgui_context)
+						return Dumpling::IGHeadUpDisplay::FormEventHook(event);
+					return event.RespondMarkAsSkip();
+				}
 			);
 			if (re.has_value())
 			{
@@ -193,8 +186,8 @@ namespace MapoToufu
 				
 				sys_parameter.module_name = module_name;
 				
-				sys_parameter.layer = priority.layer;
-				sys_parameter.priority.primary = priority.primary_priority;
+				sys_parameter.layer = init_config.priority.layer;
+				sys_parameter.priority.primary = init_config.priority.primary_priority;
 
 				sys_parameter.priority.second = 1;
 				sys_parameter.name = L"MapoToufuRenderer::Commited";
@@ -243,8 +236,8 @@ namespace MapoToufu
 					auto data = comp.QueryEntity(context, *entity);
 					auto form = data->GetPointer<0>();
 					Dumpling::Form::Config config;
-					form->event = FormEventCapture::Create({});
-					config.event_capture = form->event;
+					//form->event = FormEventCapture::Create({});
+					//config.event_capture = form->event;
 					form->platform_form = Dumpling::Form::Create(config);
 					form->form_wrapper = renderer->CreateFormWrapper(form->platform_form);
 					form->form_wrapper->LogicPresent();

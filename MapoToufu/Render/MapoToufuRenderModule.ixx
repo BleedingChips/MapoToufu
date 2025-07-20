@@ -29,13 +29,14 @@ export namespace MapoToufu
 		struct Config
 		{
 			RenderPlatform platform = RenderPlatform::DoNotCare;
+			bool enable_imgui_context = true;
 			ModulePriority priority;
 			std::pmr::memory_resource* resource = std::pmr::get_default_resource();
 		};
 
 		static Ptr Create(Config config = {});
 
-		bool AddFormComponent(Instance& instance, Entity& target_entity);
+		bool AddFormComponent(Instance& instance, Entity& target_entity, FormConfig config = {});
 		virtual void Init(GameContext& context) override;
 		virtual void Load(Instance& instance) override;
 		virtual void UnLoad(Context& context) override;
@@ -46,12 +47,11 @@ export namespace MapoToufu
 
 		RendererModule(Config config);
 
-		RenderPlatform platform;
-		ModulePriority priority;
+		Config init_config;
 		Dumpling::Device::Ptr renderer;
 
 		std::shared_mutex event_capture_mutex;
-		std::pmr::vector<Dumpling::FormEventCapture::Ptr> captures;
+		std::pmr::vector<Dumpling::FormEventHook::Ptr> captures;
 
 		friend struct RendererModule;
 	};

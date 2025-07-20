@@ -12,26 +12,21 @@ import MapoToufuRenderPass;
 
 export namespace MapoToufu
 {
-
+	using FormEvent = Dumpling::FormEvent;
 	struct Form;
+
+	struct FormEventHook : public Dumpling::FormEventHook
+	{
+		using Ptr = Potato::Pointer::IntrusivePtr<FormEventHook, Dumpling::FormEventHook::Wrapper>;
+		virtual void UpdateEventHook(Context& context, Form& form) {}
+	};
 
 	struct FormConfig
 	{
-
-	};
-
-	struct FormEventCapture : public Dumpling::FormEventCapture
-	{
-		void Swap() {};
-
-		using Ptr = Potato::Pointer::IntrusivePtr<FormEventCapture, Wrapper>;
-
-		static Ptr Create(FormConfig config = {}, std::pmr::memory_resource* resource = std::pmr::get_default_resource());
-
-		virtual void Update(Context& context, Entity& owner, Form& form) = 0;
-
-	public:
-
+		Dumpling::Form::Rectangle rectangle;
+		Dumpling::FormStyle::Ptr style = Dumpling::FormStyle::GetFixedStyle();
+		FormEventHook::Ptr event_hook;
+		wchar_t const* title = L"MapoToufu Form";
 	};
 
 	using PassRenderer = Dumpling::PassRenderer;
@@ -54,6 +49,7 @@ export namespace MapoToufu
 	{
 		Dumpling::Form platform_form;
 		Dumpling::FormWrapper::Ptr form_wrapper;
-		FormEventCapture::Ptr event;
+		Dumpling::IGHeadUpDisplay::Ptr hud;
+		FormEventHook::Ptr event_hook;
 	};
 };
