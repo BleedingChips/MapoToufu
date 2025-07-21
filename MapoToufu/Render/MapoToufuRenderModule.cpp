@@ -7,6 +7,46 @@ import MapoToufuDefine;
 
 namespace MapoToufu
 {
+	struct DefaultFormEventHoot : public FormEventHook, public Potato::IR::MemoryResourceRecordIntrusiveInterface
+	{
+		using Ptr = FormEventHook::Ptr;
+
+		static Ptr Create(std::pmr::memory_resource* resource = std::pmr::get_default_resource());
+
+
+		virtual FormEvent::Respond Hook(FormEvent& event) override
+		{
+			if (event.IsFormDestory())
+			{
+				need_quit = true;
+				FormEvent::PostQuitEvent();
+			}
+			return event.RespondMarkAsSkip();
+		}
+		virtual void UpdateEventHook(Context& context, Form& form) override
+		{
+			if (need_quit)
+			{
+				context.GetInstance().RequireQuit();
+			}
+		}
+		DefaultFormEventHoot(Potato::IR::MemoryResourceRecord record) : MemoryResourceRecordIntrusiveInterface(record) {}
+		virtual void AddFormEventHookRef() const { MemoryResourceRecordIntrusiveInterface::AddRef(); }
+		virtual void SubFormEventHookRef() const { MemoryResourceRecordIntrusiveInterface::SubRef(); }
+	protected:
+		std::atomic_bool need_quit = false;
+	};
+
+	DefaultFormEventHoot::Ptr DefaultFormEventHoot::Create(std::pmr::memory_resource* resource)
+	{
+		auto re = Potato::IR::MemoryResourceRecord::Allocate<DefaultFormEventHoot>(resource);
+		if (re)
+		{
+			return new (re.Get()) DefaultFormEventHoot{re};
+		}
+		return {};
+	}
+
 
 	struct RendererModuleDefaultImplement : 
 		public RendererModule, 
@@ -41,7 +81,7 @@ namespace MapoToufu
 		renderer = Dumpling::Device::Create();
 	}
 
-	SystemNode::Ptr RendererFunction_Commited()
+	SystemNode::Ptr RendererFunction_Flush()
 	{
 		static auto commited_system = AutoSystemNodeStatic(
 			[](
@@ -62,7 +102,7 @@ namespace MapoToufu
 				}
 
 				comp_q.Foreach(context,
-					[](decltype(comp_q)::Data& output) -> bool {
+					[&](decltype(comp_q)::Data& output) -> bool {
 						auto span = output.GetSpan<0>();
 						for (auto& ite : span)
 						{
@@ -70,43 +110,13 @@ namespace MapoToufu
 							{
 								ite.form_wrapper->LogicPresent();
 							}
-						}
-						return false;
-					}
-				);
-			});
-		return &commited_system;
-	}
-
-	SystemNode::Ptr RendererFunction_Flush()
-	{
-		static auto commited_system = AutoSystemNodeStatic(
-			[](
-				Context& context,
-				AutoComponentQuery<Form, EntityProperty> comp_q,
-				AutoSingletonQuery<FrameRenderer> single_q
-				)
-			{
-				/*
-				comp_q.Foreach(context,
-					[&](decltype(comp_q)::Data& output) -> bool {
-						for (auto ite : output)
-						{
-							auto [form, property] = ite;
-							if (form != nullptr)
-							{
-								if (form->form_wrapper)
-									form->form_wrapper->Present();
-								if (form->event)
-									form->event->Update(context, *property->GetEntity(), *form);
-							}
+							if (ite.event_hook)
+								ite.event_hook->UpdateEventHook(context, ite);
 						}
 						return true;
 					}
 				);
-				*/
 
-				auto render_query = single_q.Query(context);
 				if (render_query.has_value())
 				{
 					auto render = render_query->GetPointer<0>();
@@ -115,24 +125,9 @@ namespace MapoToufu
 						render->FlushFrame();
 					}
 				}
+
 			});
 		return &commited_system;
-	}
-
-	SystemNode::Ptr RendererFunction_Dispatch()
-	{
-		static auto dispatch_system = AutoSystemNodeStatic(
-			[](Context& context, AutoSingletonQuery<FrameRenderer> single_q)
-			{
-				if (auto outputr = single_q.Query(context))
-				{
-					if (auto [frame_renderer] = outputr->GetPointerTuple(); frame_renderer != nullptr)
-					{
-
-					}
-				}
-			});
-		return &dispatch_system;
 	}
 
 	void RendererModule::TaskExecute(Potato::Task::Context& context, Parameter& parameter)
@@ -175,12 +170,8 @@ namespace MapoToufu
 			//f_renderer.frame_renderer = ;
 			if (instance.AddSingleton(std::move(f_renderer)))
 			{
-				auto commited_sys_index = instance.PrepareSystemNode(RendererFunction_Commited());
-				assert(commited_sys_index);
 				auto flush_sys_index = instance.PrepareSystemNode(RendererFunction_Flush());
 				assert(flush_sys_index);
-				auto dispatch_sys_index = instance.PrepareSystemNode(RendererFunction_Dispatch());
-				assert(dispatch_sys_index);
 
 				SystemNode::Parameter sys_parameter;
 				
@@ -189,21 +180,7 @@ namespace MapoToufu
 				sys_parameter.layer = init_config.priority.layer;
 				sys_parameter.priority.primary = init_config.priority.primary_priority;
 
-				sys_parameter.priority.second = 1;
-				sys_parameter.name = L"MapoToufuRenderer::Commited";
-				//sys_parameter.acceptable_mask = *ThreadMask::MainThread;
-
-				instance.LoadSystemNode(SystemCategory::Tick, commited_sys_index, sys_parameter);
-
-				/*
-				sys_parameter.priority.second = 2;
-				sys_parameter.name = L"MapoToufuRenderer::Dispatch";
-				sys_parameter.acceptable_mask = std::numeric_limits<decltype(sys_parameter.acceptable_mask)>::max();
-
-				instance.LoadSystemNode(SystemCategory::Tick, dispatch_sys_index, sys_parameter);
-				*/
-
-				sys_parameter.priority.second = 100;
+				sys_parameter.priority.second = 0;
 				sys_parameter.name = L"MapoToufuRenderer::Flush";
 				sys_parameter.acceptable_mask = std::numeric_limits<decltype(sys_parameter.acceptable_mask)>::max();
 				
@@ -227,227 +204,41 @@ namespace MapoToufu
 
 	}
 
-	bool RendererModule::AddFormComponent(Instance& instance, Entity& target_entity)
+	bool RendererModule::AddFormComponent(Instance& instance, Entity& target_entity, FormConfig form_config)
 	{
 		if (instance.AddEntityComponent(target_entity, Form{}))
 		{
-			auto sys_index = instance.PrepareSystemNode(
-				CreateAutoSystemNode([entity = Entity::Ptr{ &target_entity }, renderer = renderer](Context& context, AutoComponentQuery<Form> comp) {
+			SystemNode::Parameter para;
+			para.acceptable_mask = *ThreadMask::MainThread;
+			para.layer = init_config.priority.layer + 1;
+			para.priority.primary = init_config.priority.primary_priority;
+			para.priority.second = 10;
+
+			auto index = instance.LoadOnceSystemNode(
+				CreateAutoSystemNode([entity = Entity::Ptr{ &target_entity }, renderer = renderer, form_config = std::move(form_config)](Context& context, AutoComponentQuery<Form> comp) {
 					auto data = comp.QueryEntity(context, *entity);
 					auto form = data->GetPointer<0>();
 					Dumpling::Form::Config config;
-					//form->event = FormEventCapture::Create({});
-					//config.event_capture = form->event;
+					config.title = form_config.title;
+					config.style = form_config.style;
+					config.rectangle = form_config.rectangle;
+					config.event_hook = form_config.event_hook;
+					if (!config.event_hook)
+					{
+						auto hook = DefaultFormEventHoot::Create();
+						config.event_hook = hook;
+						form->event_hook = hook;
+					}
 					form->platform_form = Dumpling::Form::Create(config);
 					form->form_wrapper = renderer->CreateFormWrapper(form->platform_form);
 					form->form_wrapper->LogicPresent();
-					})
-				, { true });
-
-			SystemNode::Parameter para;
-			para.acceptable_mask = *ThreadMask::MainThread;
-			instance.LoadSystemNode(SystemCategory::OnceNextFrame, sys_index, para);
-			return true;
-		}
-		return false;
-	}
-
-	/*
-	void RendererModule::AddPass(Instance& instance, Instance::SystemIndex index, SystemNode::Parameter parameter)
-	{
-		parameter.layer = priority.layer;
-		parameter.priority.primary = priority.primary_priority;
-		parameter.priority.second = 5;
-
-		instance.LoadSystemNode(SystemCategory::Tick, index, std::move(parameter));
-	}
-
-	PassIndex RendererModule::RegisterPass(Instance& instance, Instance::SystemIndex index, SystemNode::Parameter parameter)
-	{
-		auto init_system = CreateAutoSystemNode(
-			[=](AutoSingletonQuery<PassDistributor>)
-		);
-		instance.PrepareSystemNode()
-	}
-	*/
-
-	/*
-	FormEventStorage::Ptr FormEventStorage::Create(std::pmr::memory_resource* resource)
-	{
-		auto ir = Potato::IR::MemoryResourceRecord::Allocate<FormEventStorage>(resource);
-		if (ir)
-		{
-			return new(ir.Get()) FormEventStorage{ir};
-		}
-		return {};
-	}
-
-	FormEvent::Respond FormEventStorage::RespondEvent(FormEvent event)
-	{
-		std::lock_guard lg(receive_mutex);
-		receive_events.emplace_back(std::move(event), false);
-		return FormEvent::Respond::PASS;
-	}
-
-	void FormEventStorage::SwapReceiveEvent()
-	{
-		std::lock(respond_mutex, receive_mutex);
-		std::lock_guard lg1(respond_mutex, std::adopt_lock);
-		std::lock_guard lg2(receive_mutex, std::adopt_lock);
-		std::swap(respond_events, receive_events);
-		receive_events.clear();
-	}
-
-
-	
-
-	RendererModule::RendererModule(Potato::IR::MemoryResourceRecord record, Config config, Dumpling::Device::Ptr renderer)
-		: MemoryResourceRecordIntrusiveInterface(record), config(config), renderer(std::move(renderer))
-	{
-		
-	}
-
-	void RendererModule::Renderer_FlushFrame(SceneWrapper& wrapper, AutoComponentQuery<Form> c_form, AutoSingletonQuery<FrameRenderer> c_renderer, AutoThreadOrderQuery<FrameRenderer const>)
-	{
-		if (c_renderer.GetSingletons(wrapper))
-		{
-			auto ptr = c_renderer.Get<FrameRenderer>();
-			if (ptr != nullptr)
-			{
-				ptr->frame_renderer->FlushToLastFrame();
-			}
-		}
-
-		std::size_t ite = 0;
-		while (c_form.IterateComponent(wrapper, ite++))
-		{
-			auto span = c_form.AsSpan<Form>();
-			for (auto& ite : span)
-			{
-				ite.form_wrapper->Present();
-			}
-		}
-		
-	}
-
-	void RendererModule::Renderer_DispatchPass(SceneWrapper& wrapper, AutoSingletonQuery<FrameRenderer> c_renderer, AutoThreadOrderQuery<FrameRenderer const>)
-	{
-		if(c_renderer.GetSingletons(wrapper))
-		{
-			auto ptr = c_renderer.Get<FrameRenderer>();
-			if (ptr != nullptr)
-			{
-				for (auto& ite : ptr->reference_node)
-				{
-					wrapper.AddTemporarySystemNode(*ite, {});
-				}
-				ptr->reference_node.clear();
-			}
-		}
-	}
-
-	void RendererModule::Renderer_CommitedFrame(SceneWrapper& wrapper, AutoComponentQuery<Form> c_filter, AutoSingletonQuery<FrameRenderer> c_renderer, AutoThreadOrderQuery<FrameRenderer>)
-	{
-		if (c_renderer.GetSingletons(wrapper))
-		{
-			auto ptr = c_renderer.Get<FrameRenderer>();
-			if (ptr != nullptr)
-			{
-				ptr->frame_renderer->CommitFrame();
-			}
-		}
-
-		std::size_t ite = 0;
-		while (c_filter.IterateComponent(wrapper, ite++))
-		{
-			auto span = c_filter.AsSpan<Form>();
-			for (auto& ite : span)
-			{
-				ite.form_wrapper->LogicPresent();
-				if(ite.is_primary)
-				{
-					ite.ForeachEvent([&](FormEvent const& event) ->FormEvent::Respond
-						{
-							if(event.IsModify())
-							{
-								auto modify = event.GetModify();
-								if(modify.message == decltype(modify.message)::DESTROY)
-								{
-									wrapper.GetContext().Quit();
-								}
-							}
-							return FormEvent::Respond::PASS;
-						}
-						);
-				}
-				ite.event_storage->SwapReceiveEvent();
-			}
-		}
-	}
-
-	bool RendererModule::CreateRenderer(Scene& scene)
-	{
-		FrameRenderer f_renderer;
-		f_renderer.frame_renderer = renderer->CreateFrameRenderer();
-		if (scene.AddSingleton(std::move(f_renderer)))
-		{
-			scene.CreateAndAddAutoSystem(
-				Renderer_CommitedFrame,
-				{
-					{ config.render_layer, config.render_priority_first, config.render_priority_second, 0 },
-					u8"renderer_module%commit_frame"
-				}
+					}),
+				para
 			);
-
-
-			scene.CreateAndAddAutoSystem(
-				Renderer_DispatchPass,
-				{
-				{ config.render_layer, config.render_priority_first, config.render_priority_second, 1 },
-				u8"renderer_module%dispatch_pass"
-				});
-
-
-			scene.CreateAndAddAutoSystem(
-				Renderer_FlushFrame,
-				{
-					{config.render_layer, config.render_priority_first, config.render_priority_second, 2 },
-					u8"renderer_module%flush_frame"
-				}
-			);
+			assert(index);
 
 			return true;
 		}
 		return false;
 	}
-
-	bool RendererModule::CreateForm(Entity& entity, Scene& scene, FormConfig const& config)
-	{
-
-		Dumpling::Form::Config real_config = config;
-		auto storage = FormEventStorage::Create();
-		real_config.event_capture = storage;
-
-		auto form = Dumpling::Form::Create(std::move(real_config));
-		if(form)
-		{
-			auto wrapper = renderer->CreateFormWrapper(form, {});
-			if(wrapper)
-			{
-				wrapper->LogicPresent();
-				Form real_form;
-				real_form.form = std::move(form);
-				real_form.is_primary = config.is_primary;
-				real_form.event_storage = std::move(storage);
-				real_form.form_wrapper = wrapper;
-				if (scene.AddEntityComponent(entity, std::move(real_form)))
-				{
-					return true;
-				}
-			}
-			form.DestroyForm();
-		}
-		return false;
-	}
-	*/
 }

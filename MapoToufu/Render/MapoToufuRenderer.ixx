@@ -52,4 +52,9 @@ export namespace MapoToufu
 		Dumpling::IGHeadUpDisplay::Ptr hud;
 		FormEventHook::Ptr event_hook;
 	};
+
+	struct IGHud
+	{
+		Dumpling::IGHeadUpDisplay::Ptr hud;
+	};
 };
