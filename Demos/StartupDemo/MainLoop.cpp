@@ -18,51 +18,10 @@ auto Fun = [](float color, float speed, float time) -> float
 };
 
 
-struct CleanPassParameter
-{
-	Dumpling::Color color;
-	Dumpling::RenderTargetSet rt_set;
-};
-
-
-auto clean_sys = AutoSystemNodeStatic(
-	[&](Context& context, AutoComponentQuery<Form const> comp_f, AutoSingletonQuery<FrameRenderer const, PassDistributor const> frame_render )
-	{
-		auto [render, distrubutor] = frame_render.Query(context)->GetPointerTuple();
-
-		if (render == nullptr || distrubutor == nullptr)
-			return;
-
-		auto index = distrubutor->GetPassIndex(L"CleanScreanPass");
-		std::size_t iterator = 0;
-		PassRequest request;
-		PassRenderer pass_render;
-		while (distrubutor->PopRequest(index, request, iterator))
-		{
-			++iterator;
-			if (render->BeginPass(pass_render, request))
-			{
-				if (request.property && request.property->GetStructLayout()->IsStatic<CleanPassParameter>())
-				{
-					auto parameter = request.property->GetStaticCastData<CleanPassParameter const>();
-					if (parameter != nullptr)
-					{
-						pass_render.SetRenderTargets(parameter->rt_set);
-						pass_render.ClearRendererTarget(0, parameter->color);
-					}
-				}
-				render->EndPass(pass_render);
-			}
-		}
-	}
-);
-
-
-
-
 int main()
 {
-
+	Dumpling::Color color = {1.0f, 1.0f, 1.0f, 1.0f};
+	Dumpling::Color new_color{ color };
 	GameContext context;
 	RendererModule::Config config;
 	config.priority.layer = 0;
@@ -72,21 +31,46 @@ int main()
 	renderer_module->Init(context);
 	renderer_module->Load(*instance);
 
-	auto clean_sys_index = instance->PrepareSystemNode(&clean_sys);
-
 	auto entity = instance->CreateEntity();
 
 	auto thread_id = std::this_thread::get_id();
 	renderer_module->AddFormComponent(*instance, *entity);
 
-	{
-		Instance::SystemInfo system_info;
-		instance->PrepareSystemNode(&clean_sys, system_info);
-	}
-	
-	{
+	auto index = instance->PrepareSystemNode(
+		CreateAutoSystemNode([&](Context& context, AutoComponentQuery<Form> c_query, AutoSingletonQuery<PassDistributor> singleton) {
+			color.R = Fun(color.R, 0.2f, context.GetInstance().GetDeltaTime().count());
+			color.G = Fun(color.G, 0.3f, context.GetInstance().GetDeltaTime().count());
+			color.B = Fun(color.B, 0.4f, context.GetInstance().GetDeltaTime().count());
+			new_color = color;
+			new_color.R = std::abs(new_color.R - 1.0f);
+			new_color.G = std::abs(new_color.G - 1.0f);
+			new_color.B = std::abs(new_color.B - 1.0f);
+			auto distributor = singleton.Query(context)->GetPointer<0>();
+			if (distributor != nullptr)
+			{
+				auto index = distributor->GetPassIndex(MapoToufu::CleanViewTargetPass::GetPassName());
+				assert(index);
+				auto par = distributor->CopyParameter(index);
+				if (par && par->GetStructLayout()->IsStatic<CleanViewTargetPass::Property>())
+				{
+					auto pro = par->GetStaticCastData<CleanViewTargetPass::Property>();
+					c_query.Foreach(context, [&](AutoComponentQuery<Form>::Data& data) -> bool {
+						if (data.GetPointer<0>()->form_wrapper)
+						{
+							pro->target.AddRenderTarget(*data.GetPointer<0>()->form_wrapper->GetAvailableRenderResource());
+							pro->clean_color[pro->target.GetRenderTargetCount() - 1] = new_color;
+						}
+						return true;
+					});
+				}
+				Dumpling::PassSequencer sequ;
+				sequ.elements.push_back({ index, par });
+				distributor->SendRequest(sequ);
+			}
+		})
+	);
 
-	}
+	instance->LoadSystemNode(SystemCategory::Tick, index);
 
 	context.Launch(*instance);
 	context.Loop();

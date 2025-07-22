@@ -87,7 +87,7 @@ namespace MapoToufu
 			[](
 				Context& context,
 				AutoComponentQuery<Form> comp_q,
-				AutoSingletonQuery<FrameRenderer> single_q
+				AutoSingletonQuery<FrameRenderer, PassDistributor> single_q
 				)
 			{
 
@@ -109,6 +109,7 @@ namespace MapoToufu
 							if (ite.form_wrapper)
 							{
 								ite.form_wrapper->LogicPresent();
+								ite.form_wrapper->Present();
 							}
 							if (ite.event_hook)
 								ite.event_hook->UpdateEventHook(context, ite);
@@ -123,6 +124,11 @@ namespace MapoToufu
 					if (render != nullptr)
 					{
 						render->FlushFrame();
+					}
+					auto pass = render_query->GetPointer<1>();
+					if (pass != nullptr)
+					{
+						pass->CleanRequest();
 					}
 				}
 
@@ -170,21 +176,75 @@ namespace MapoToufu
 			//f_renderer.frame_renderer = ;
 			if (instance.AddSingleton(std::move(f_renderer)))
 			{
-				auto flush_sys_index = instance.PrepareSystemNode(RendererFunction_Flush());
-				assert(flush_sys_index);
 
-				SystemNode::Parameter sys_parameter;
-				
-				sys_parameter.module_name = module_name;
-				
-				sys_parameter.layer = init_config.priority.layer;
-				sys_parameter.priority.primary = init_config.priority.primary_priority;
+				{
+					auto flush_sys_index = instance.PrepareSystemNode(RendererFunction_Flush());
+					assert(flush_sys_index);
 
-				sys_parameter.priority.second = 0;
-				sys_parameter.name = L"MapoToufuRenderer::Flush";
-				sys_parameter.acceptable_mask = std::numeric_limits<decltype(sys_parameter.acceptable_mask)>::max();
+					SystemNode::Parameter sys_parameter;
+
+					sys_parameter.module_name = module_name;
+
+					sys_parameter.layer = init_config.priority.layer;
+					sys_parameter.priority.primary = init_config.priority.primary_priority;
+
+					sys_parameter.priority.second = std::numeric_limits<decltype(sys_parameter.priority.second)>::max();
+					sys_parameter.name = L"MapoToufuRenderer::Flush";
+					sys_parameter.acceptable_mask = std::numeric_limits<decltype(sys_parameter.acceptable_mask)>::max();
+
+					instance.LoadSystemNode(SystemCategory::Tick, flush_sys_index, sys_parameter);
+				}
+
+				PassDistributor distributor;
+				Dumpling::PassScription scription;
+				scription.pass_name = CleanViewTargetPass::GetPassName();
+				scription.default_parameter = Potato::IR::StructLayoutObject::DefaultConstruct(
+					Potato::IR::StructLayout::GetStatic<CleanViewTargetPass::Property>()
+				);
+				distributor.RegisterPass(std::move(scription));
+				scription.pass_name = IGHUDPass::GetPassName();
+				scription.default_parameter = Potato::IR::StructLayoutObject::DefaultConstruct(
+					Potato::IR::StructLayout::GetStatic<IGHUDPass::Property>()
+				);
+				distributor.RegisterPass(std::move(scription));
+				instance.AddSingleton(std::move(distributor));
 				
-				instance.LoadSystemNode(SystemCategory::Tick, flush_sys_index, sys_parameter);
+				{
+					auto flush_sys_index = instance.PrepareSystemNode(CleanViewTargetPass::GetPassSystem());
+					assert(flush_sys_index);
+
+					SystemNode::Parameter sys_parameter;
+
+					sys_parameter.module_name = module_name;
+
+					sys_parameter.layer = init_config.priority.layer;
+					sys_parameter.priority.primary = init_config.priority.primary_priority;
+
+					sys_parameter.priority.second = 1;
+					sys_parameter.name = CleanViewTargetPass::GetPassName();
+					sys_parameter.acceptable_mask = std::numeric_limits<decltype(sys_parameter.acceptable_mask)>::max();
+
+					instance.LoadSystemNode(SystemCategory::Tick, flush_sys_index, sys_parameter);
+				}
+
+				{
+					auto flush_sys_index = instance.PrepareSystemNode(IGHUDPass::GetPassSystem());
+					assert(flush_sys_index);
+
+					SystemNode::Parameter sys_parameter;
+
+					sys_parameter.module_name = module_name;
+
+					sys_parameter.layer = init_config.priority.layer;
+					sys_parameter.priority.primary = init_config.priority.primary_priority;
+
+					sys_parameter.priority.second = 1;
+					sys_parameter.name = IGHUDPass::GetPassName();
+					sys_parameter.acceptable_mask = std::numeric_limits<decltype(sys_parameter.acceptable_mask)>::max();
+
+					instance.LoadSystemNode(SystemCategory::Tick, flush_sys_index, sys_parameter);
+				}
+
 			}
 		}
 	}
@@ -231,7 +291,7 @@ namespace MapoToufu
 					}
 					form->platform_form = Dumpling::Form::Create(config);
 					form->form_wrapper = renderer->CreateFormWrapper(form->platform_form);
-					form->form_wrapper->LogicPresent();
+					//form->form_wrapper->LogicPresent();
 					}),
 				para
 			);
