@@ -3,50 +3,10 @@ module;
 module MapoToufuRenderModule;
 
 import MapoToufuGameContext;
-import MapoToufuDefine;
+
 
 namespace MapoToufu
 {
-	struct DefaultFormEventHoot : public FormEventHook, public Potato::IR::MemoryResourceRecordIntrusiveInterface
-	{
-		using Ptr = FormEventHook::Ptr;
-
-		static Ptr Create(std::pmr::memory_resource* resource = std::pmr::get_default_resource());
-
-
-		virtual FormEvent::Respond Hook(FormEvent& event) override
-		{
-			if (event.IsFormDestory())
-			{
-				need_quit = true;
-				FormEvent::PostQuitEvent();
-			}
-			return event.RespondMarkAsSkip();
-		}
-		virtual void UpdateEventHook(Context& context, Form& form) override
-		{
-			if (need_quit)
-			{
-				context.GetInstance().RequireQuit();
-			}
-		}
-		DefaultFormEventHoot(Potato::IR::MemoryResourceRecord record) : MemoryResourceRecordIntrusiveInterface(record) {}
-		virtual void AddFormEventHookRef() const { MemoryResourceRecordIntrusiveInterface::AddRef(); }
-		virtual void SubFormEventHookRef() const { MemoryResourceRecordIntrusiveInterface::SubRef(); }
-	protected:
-		std::atomic_bool need_quit = false;
-	};
-
-	DefaultFormEventHoot::Ptr DefaultFormEventHoot::Create(std::pmr::memory_resource* resource)
-	{
-		auto re = Potato::IR::MemoryResourceRecord::Allocate<DefaultFormEventHoot>(resource);
-		if (re)
-		{
-			return new (re.Get()) DefaultFormEventHoot{re};
-		}
-		return {};
-	}
-
 
 	struct RendererModuleDefaultImplement : 
 		public RendererModule, 
@@ -90,8 +50,27 @@ namespace MapoToufu
 				AutoSingletonQuery<FrameRenderer, PassDistributor> single_q
 				)
 			{
-
 				auto render_query = single_q.Query(context);
+
+				/*
+				comp_q.Foreach(context,
+					[&](decltype(comp_q)::Data& output) -> bool {
+						auto span = output.GetSpan<0>();
+						for (auto& ite : span)
+						{
+							if (ite.form_wrapper)
+							{
+								//ite.form_wrapper->LogicPresent();
+								//ite.form_wrapper->Present();
+							}
+							if (ite.event_hook)
+								ite.event_hook->UpdateEventHook(context, ite);
+						}
+						return true;
+					}
+				);
+				*/
+				
 				if (render_query.has_value())
 				{
 					auto render = render_query->GetPointer<0>();
@@ -101,6 +80,21 @@ namespace MapoToufu
 					}
 				}
 
+				if (render_query.has_value())
+				{
+					auto render = render_query->GetPointer<0>();
+					if (render != nullptr)
+					{
+						render->FlushFrame();
+					}
+					auto pass = render_query->GetPointer<1>();
+					if (pass != nullptr)
+					{
+						pass->CleanRequest();
+					}
+				}
+
+				
 				comp_q.Foreach(context,
 					[&](decltype(comp_q)::Data& output) -> bool {
 						auto span = output.GetSpan<0>();
@@ -117,20 +111,7 @@ namespace MapoToufu
 						return true;
 					}
 				);
-
-				if (render_query.has_value())
-				{
-					auto render = render_query->GetPointer<0>();
-					if (render != nullptr)
-					{
-						render->FlushFrame();
-					}
-					auto pass = render_query->GetPointer<1>();
-					if (pass != nullptr)
-					{
-						pass->CleanRequest();
-					}
-				}
+				
 
 			});
 		return &commited_system;
@@ -172,7 +153,7 @@ namespace MapoToufu
 	{
 		if (renderer)
 		{
-			FrameRenderer f_renderer{ renderer->CreateFrameRenderer() };
+			FrameRenderer f_renderer{ renderer->CreateFrameRenderer(), renderer };
 			//f_renderer.frame_renderer = ;
 			if (instance.AddSingleton(std::move(f_renderer)))
 			{
@@ -180,31 +161,40 @@ namespace MapoToufu
 				{
 					auto flush_sys_index = instance.PrepareSystemNode(RendererFunction_Flush());
 					assert(flush_sys_index);
-
 					SystemNode::Parameter sys_parameter;
-
 					sys_parameter.module_name = module_name;
-
 					sys_parameter.layer = init_config.priority.layer;
 					sys_parameter.priority.primary = init_config.priority.primary_priority;
-
 					sys_parameter.priority.second = std::numeric_limits<decltype(sys_parameter.priority.second)>::max();
+					sys_parameter.priority.third = std::numeric_limits<decltype(sys_parameter.priority.second)>::max();
 					sys_parameter.name = L"MapoToufuRenderer::Flush";
 					sys_parameter.acceptable_mask = std::numeric_limits<decltype(sys_parameter.acceptable_mask)>::max();
-
-					instance.LoadSystemNode(SystemCategory::Tick, flush_sys_index, sys_parameter);
+					auto exe_index = instance.LoadSystemNode(SystemCategory::Tick, flush_sys_index, sys_parameter);
+					assert(exe_index.has_value() && *exe_index);
 				}
+
+				/*
+				{
+					auto flush_sys_index = instance.PrepareSystemNode(IGHUDPass::GetPassSystem());
+					assert(flush_sys_index);
+					SystemNode::Parameter sys_parameter;
+					sys_parameter.module_name = module_name;
+					sys_parameter.layer = init_config.priority.layer;
+					sys_parameter.priority.primary = init_config.priority.primary_priority;
+					sys_parameter.priority.second = std::numeric_limits<decltype(sys_parameter.priority.second)>::max();
+					sys_parameter.priority.third = std::numeric_limits<decltype(sys_parameter.priority.second)>::max() - 1;
+					sys_parameter.name = IGHUDPass::GetPassName();
+					sys_parameter.acceptable_mask = std::numeric_limits<decltype(sys_parameter.acceptable_mask)>::max();
+					auto exe_index = instance.LoadSystemNode(SystemCategory::Tick, flush_sys_index, sys_parameter);
+					assert(exe_index.has_value() && *exe_index);
+				}
+				*/
 
 				PassDistributor distributor;
 				Dumpling::PassScription scription;
 				scription.pass_name = CleanViewTargetPass::GetPassName();
 				scription.default_parameter = Potato::IR::StructLayoutObject::DefaultConstruct(
 					Potato::IR::StructLayout::GetStatic<CleanViewTargetPass::Property>()
-				);
-				distributor.RegisterPass(std::move(scription));
-				scription.pass_name = IGHUDPass::GetPassName();
-				scription.default_parameter = Potato::IR::StructLayoutObject::DefaultConstruct(
-					Potato::IR::StructLayout::GetStatic<IGHUDPass::Property>()
 				);
 				distributor.RegisterPass(std::move(scription));
 				instance.AddSingleton(std::move(distributor));
@@ -264,15 +254,16 @@ namespace MapoToufu
 
 	}
 
+	/*
 	bool RendererModule::AddFormComponent(Instance& instance, Entity& target_entity, FormConfig form_config)
 	{
 		if (instance.AddEntityComponent(target_entity, Form{}))
 		{
 			SystemNode::Parameter para;
 			para.acceptable_mask = *ThreadMask::MainThread;
-			para.layer = init_config.priority.layer + 1;
+			para.layer = init_config.priority.layer;
 			para.priority.primary = init_config.priority.primary_priority;
-			para.priority.second = 10;
+			para.priority.second = std::numeric_limits<decltype(para.priority.second)>::min();
 
 			auto index = instance.LoadOnceSystemNode(
 				CreateAutoSystemNode([entity = Entity::Ptr{ &target_entity }, renderer = renderer, form_config = std::move(form_config)](Context& context, AutoComponentQuery<Form> comp) {
@@ -301,4 +292,32 @@ namespace MapoToufu
 		}
 		return false;
 	}
+
+	bool RendererModule::AddIGHUDComponent(Instance& instance, Entity& target_entity, Dumpling::IGWidget::Ptr weight)
+	{
+		if (instance.AddEntityComponent(target_entity, IGHud{}))
+		{
+			SystemNode::Parameter para;
+			para.acceptable_mask = *ThreadMask::MainThread;
+			para.layer = init_config.priority.layer + 1;
+			para.priority.primary = init_config.priority.primary_priority;
+			para.priority.second = std::numeric_limits<decltype(para.priority.second)>::min() + 1;
+
+			auto index = instance.LoadOnceSystemNode(
+				CreateAutoSystemNode([entity = Entity::Ptr{ &target_entity }, renderer = renderer, weight = std::move(weight)](Context& context, AutoComponentQuery<Form, IGHud> comp) {
+					auto data = comp.QueryEntity(context, *entity);
+					auto hud = data->GetPointer<1>();
+					auto form = data->GetPointer<0>();
+					hud->hud = Dumpling::IGHeadUpDisplay::Create(*form, std::move(weight));
+					//form->form_wrapper->LogicPresent();
+					}),
+				para
+			);
+			assert(index);
+
+			return true;
+		}
+		return false;
+	}
+	*/
 }

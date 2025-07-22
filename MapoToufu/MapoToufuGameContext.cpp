@@ -11,12 +11,14 @@ namespace MapoToufu
 
 	GameContext::GameContext()
 	{
+		/*
 		if (std::thread::hardware_concurrency() >= 1)
 		{
 			Potato::Task::ThreadProperty thread_property;
 			thread_property.acceptable_mask = ~static_cast<std::size_t>(ThreadMask::MainThread);
 			task_context.CreateThreads(std::thread::hardware_concurrency() - 1, thread_property);
 		}
+		*/
 	}
 
 	void GameContext::Loop()

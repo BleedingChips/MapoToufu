@@ -1,4 +1,5 @@
 #include <cassert>
+#include <imgui.h>
 
 import std;
 import Potato;
@@ -17,6 +18,19 @@ auto Fun = [](float color, float speed, float time) -> float
 	return std::fmod(color + speed * time, 2.0f);
 };
 
+struct DemoWeight : public Dumpling::IGWidget
+{
+	virtual void Draw(Dumpling::PassRenderer& render) override
+	{
+		ImGui::ShowDemoWindow();
+	}
+
+protected:
+
+	virtual void AddIGWidgetRef() const {}
+	virtual void SubIGWidgetRef() const {}
+}demo;
+
 
 int main()
 {
@@ -24,7 +38,7 @@ int main()
 	Dumpling::Color new_color{ color };
 	GameContext context;
 	RendererModule::Config config;
-	config.priority.layer = 0;
+	config.priority.layer = 1;
 	config.priority.primary_priority = 100;
 	auto renderer_module = MapoToufu::RendererModule::Create(config);
 	auto instance = context.CreatInstance();
@@ -34,7 +48,10 @@ int main()
 	auto entity = instance->CreateEntity();
 
 	auto thread_id = std::this_thread::get_id();
-	renderer_module->AddFormComponent(*instance, *entity);
+	//renderer_module->AddFormComponent(*instance, *entity);
+
+	SystemNode::Parameter par2;
+	par2.name = L"UpdatePipeline";
 
 	auto index = instance->PrepareSystemNode(
 		CreateAutoSystemNode([&](Context& context, AutoComponentQuery<Form> c_query, AutoSingletonQuery<PassDistributor> singleton) {
@@ -57,6 +74,7 @@ int main()
 					c_query.Foreach(context, [&](AutoComponentQuery<Form>::Data& data) -> bool {
 						if (data.GetPointer<0>()->form_wrapper)
 						{
+							data.GetPointer<0>()->form_wrapper->LogicPresent();
 							pro->target.AddRenderTarget(*data.GetPointer<0>()->form_wrapper->GetAvailableRenderResource());
 							pro->clean_color[pro->target.GetRenderTargetCount() - 1] = new_color;
 						}
@@ -70,7 +88,28 @@ int main()
 		})
 	);
 
-	instance->LoadSystemNode(SystemCategory::Tick, index);
+	instance->LoadSystemNode(SystemCategory::Tick, index, par2);
+	SystemNode::Parameter par;
+	par.name = L"FuckYou";
+	par.acceptable_mask = *renderer_module->GetCreateWindowThreadMask();
+	
+	instance->LoadOnceSystemNode(
+		CreateAutoSystemNode(
+			[](Context& context, AutoSingletonQuery<FrameRenderer const> singleton) {
+				auto render = singleton.Query(context)->GetPointer<0>();
+				if (render != nullptr)
+				{
+					auto entity = context.GetInstance().CreateEntity();
+					auto form = render->CreateForm();
+					auto im_hud = render->CreateIGHUD(form, &demo);
+					context.GetInstance().AddEntityComponent(*entity, std::move(form));
+					context.GetInstance().AddEntityComponent(*entity, std::move(im_hud));
+				}
+			}
+		),
+		par
+	);
+
 
 	context.Launch(*instance);
 	context.Loop();

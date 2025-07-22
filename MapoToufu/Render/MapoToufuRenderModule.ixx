@@ -6,6 +6,7 @@ import std;
 import Potato;
 import Dumpling;
 import Noodles;
+import MapoToufuDefine;
 import MapoToufuInstance;
 import MapoToufuRenderPass;
 import MapoToufuRenderer;
@@ -36,11 +37,13 @@ export namespace MapoToufu
 
 		static Ptr Create(Config config = {});
 
-		bool AddFormComponent(Instance& instance, Entity& target_entity, FormConfig config = {});
-		//bool AddIGHUDComponent(Instance& instance, Entity& target_entity, );
+		//bool AddFormComponent(Instance& instance, Entity& target_entity, FormConfig config = {});
+		//bool AddIGHUDComponent(Instance& instance, Entity& target_entity, Dumpling::IGWidget::Ptr weight = {});
+		
 		virtual void Init(GameContext& context) override;
 		virtual void Load(Instance& instance) override;
 		virtual void UnLoad(Context& context) override;
+		ThreadMask GetCreateWindowThreadMask() const { return ThreadMask::MainThread; }
 
 	protected:
 
