@@ -18,6 +18,11 @@ export namespace MapoToufu
 
 	struct IGHUDPass
 	{
+		struct Property
+		{
+			Dumpling::RenderTargetSet target;
+			Dumpling::IGHeadUpDisplay::Ptr hud;
+		};
 		static std::wstring_view GetPassName();
 		static SystemNode::Ptr GetPassSystem();
 	};

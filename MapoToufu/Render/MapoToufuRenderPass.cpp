@@ -10,25 +10,35 @@ namespace MapoToufu
 	SystemNode::Ptr IGHUDPass::GetPassSystem()
 	{
 		static auto system = AutoSystemNodeStatic(
-			[](Context& context, AutoComponentQuery<IGHud> comp, AutoSingletonQuery<FrameRenderer const> singleton) {
-				auto [render] = singleton.Query(context)->GetPointerTuple();
-				if (render == nullptr)
+			[](Context& context,  AutoSingletonQuery<FrameRenderer const, PassDistributor const> singleton) {
+				
+				auto [render, distributor] = singleton.Query(context)->GetPointerTuple();
+				
+				if (render == nullptr || distributor == nullptr)
 					return;
+
+				auto pass_index = distributor->GetPassIndex(GetPassName());
 
 				Dumpling::PassRequest request;
 				Dumpling::PassRenderer pass_render;
-				request.order = std::numeric_limits<decltype(request.order)>::max();
-				if (render->BeginPass(pass_render, request))
+				std::size_t request_iterator = 0;
+
+				while (distributor->PopRequest(pass_index, request, request_iterator))
 				{
-					comp.Foreach(context, [&](decltype(comp)::Data& data) -> bool {
-						auto IGHud = data.GetPointer<0>();
-						if (IGHud != nullptr && IGHud->enable && IGHud->hud)
+					request_iterator += 1;
+					if (render->BeginPass(pass_render, request))
+					{
+						auto property = request.TryGetParameter<Property>();
+						if (property != nullptr)
 						{
-							IGHud->hud->Draw(pass_render);
+							if (property->hud)
+							{
+								pass_render.SetRenderTargets(property->target);
+								property->hud->Draw(pass_render);
+							}
 						}
-						return true;
-						});
-					render->EndPass(pass_render);
+						render->EndPass(pass_render);
+					}
 				}
 			}
 		);

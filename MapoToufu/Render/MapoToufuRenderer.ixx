@@ -34,6 +34,7 @@ export namespace MapoToufu
 		Dumpling::Form platform_form;
 		Dumpling::FormWrapper::Ptr form_wrapper;
 		FormEventHook::Ptr event_hook;
+		bool need_skip_first_present = true;
 	};
 
 	struct IGHud
@@ -51,7 +52,7 @@ export namespace MapoToufu
 		FrameRenderer(Dumpling::FrameRenderer::Ptr renderer, Dumpling::Device::Ptr device) : frame_renderer(std::move(renderer)), device(std::move(device)){}
 		
 		bool CommitFrame() { return frame_renderer->CommitFrame().has_value(); }
-		bool FlushFrame() { return frame_renderer->FlushToLastFrame(); }
+		bool WaitLastFrameFinish() const { return frame_renderer->FlushToLastFrame(); }
 		bool BeginPass(PassRenderer& pass_renderer, PassRequest const& request) const;
 		bool EndPass(PassRenderer& pass_renderer) const;
 		Form CreateForm(FormConfig config = {}) const;

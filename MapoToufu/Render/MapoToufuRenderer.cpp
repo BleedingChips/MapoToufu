@@ -72,7 +72,6 @@ namespace MapoToufu
 		}
 		result.platform_form = Dumpling::Form::Create(config);
 		result.form_wrapper = device->CreateFormWrapper(result.platform_form);
-		result.form_wrapper->LogicPresent();
 		return result;
 	}
 

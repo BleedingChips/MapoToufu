@@ -54,7 +54,8 @@ int main()
 	par2.name = L"UpdatePipeline";
 
 	auto index = instance->PrepareSystemNode(
-		CreateAutoSystemNode([&](Context& context, AutoComponentQuery<Form> c_query, AutoSingletonQuery<PassDistributor> singleton) {
+		CreateAutoSystemNode([&](Context& context, AutoComponentQuery<Form, IGHud> c_query, AutoSingletonQuery<PassDistributor> singleton) {
+			
 			color.R = Fun(color.R, 0.2f, context.GetInstance().GetDeltaTime().count());
 			color.G = Fun(color.G, 0.3f, context.GetInstance().GetDeltaTime().count());
 			color.B = Fun(color.B, 0.4f, context.GetInstance().GetDeltaTime().count());
@@ -62,19 +63,24 @@ int main()
 			new_color.R = std::abs(new_color.R - 1.0f);
 			new_color.G = std::abs(new_color.G - 1.0f);
 			new_color.B = std::abs(new_color.B - 1.0f);
+
+
 			auto distributor = singleton.Query(context)->GetPointer<0>();
 			if (distributor != nullptr)
 			{
 				auto index = distributor->GetPassIndex(MapoToufu::CleanViewTargetPass::GetPassName());
+				auto index2 = distributor->GetPassIndex(MapoToufu::IGHUDPass::GetPassName());
 				assert(index);
-				auto par = distributor->CopyParameter(index);
+				assert(index2);
+
+				auto par1 = distributor->GetParameter(index);
+				auto par = Potato::IR::StructLayoutObject::CopyConstruct(par1->GetStructLayout(), *par1);
 				if (par && par->GetStructLayout()->IsStatic<CleanViewTargetPass::Property>())
 				{
 					auto pro = par->GetStaticCastData<CleanViewTargetPass::Property>();
-					c_query.Foreach(context, [&](AutoComponentQuery<Form>::Data& data) -> bool {
+					c_query.Foreach(context, [&](decltype(c_query)::Data& data) -> bool {
 						if (data.GetPointer<0>()->form_wrapper)
 						{
-							data.GetPointer<0>()->form_wrapper->LogicPresent();
 							pro->target.AddRenderTarget(*data.GetPointer<0>()->form_wrapper->GetAvailableRenderResource());
 							pro->clean_color[pro->target.GetRenderTargetCount() - 1] = new_color;
 						}
@@ -83,6 +89,26 @@ int main()
 				}
 				Dumpling::PassSequencer sequ;
 				sequ.elements.push_back({ index, par });
+
+				auto par2 = distributor->GetParameter(index2);
+				auto par3 = Potato::IR::StructLayoutObject::CopyConstruct(par2->GetStructLayout(), *par2);
+				if (par3 && par3->GetStructLayout()->IsStatic<IGHUDPass::Property>())
+				{
+					auto pro = par3->GetStaticCastData<IGHUDPass::Property>();
+					c_query.Foreach(context, [&](decltype(c_query)::Data& data) -> bool {
+						if (
+							data.GetPointer<0>()->form_wrapper
+							&& data.GetPointer<1>()->hud
+							)
+						{
+							pro->target.AddRenderTarget(*data.GetPointer<0>()->form_wrapper->GetAvailableRenderResource());
+							pro->hud = data.GetPointer<1>()->hud;
+						}
+						return true;
+						});
+				}
+				sequ.elements.push_back({ index2, par3 });
+
 				distributor->SendRequest(sequ);
 			}
 		})
