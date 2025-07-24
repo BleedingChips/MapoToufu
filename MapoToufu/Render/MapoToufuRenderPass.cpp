@@ -67,11 +67,11 @@ namespace MapoToufu
 				{
 					++iterator;
 
-					if (request.parameter && request.parameter->GetStructLayout()->IsStatic<CleanViewTargetPass::Property>())
+					auto property = request.TryGetParameter<Property>();
+					if (property != nullptr)
 					{
 						if (render->BeginPass(pass_render, request))
 						{
-							auto property = request.parameter->GetStaticCastData<CleanViewTargetPass::Property>();
 							pass_render.SetRenderTargets(property->target);
 							for (std::size_t i = 0; i < property->target.GetRenderTargetCount(); ++i)
 							{

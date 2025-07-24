@@ -225,7 +225,7 @@ namespace MapoToufu
 	{
 		Potato::Task::Node::Parameter parameter;
 		parameter.acceptable_mask = static_cast<std::size_t>(ThreadMask::MainThread);
-		parameter.custom_data.data1 = 10;
+		parameter.custom_data.data1 = 1;
 		parameter.node_name = L"MapoToufuRenderer::FormMessageLoop";
 		parameter.trigger_time = Potato::Task::TimeT::now() + std::chrono::milliseconds{ parameter.custom_data.data1 };
 		context.GetTaskContext().Commit(*this, parameter);

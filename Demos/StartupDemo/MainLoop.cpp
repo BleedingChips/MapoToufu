@@ -32,6 +32,15 @@ protected:
 }demo;
 
 
+struct Pipeline
+{
+	PassIndex clean_up_pass_index;
+	PassIndex imgui_pass_index;
+	Dumpling::PassSequencer sequence;
+	Potato::IR::StructLayoutObject::Ptr parameter;
+	Dumpling::Color color;
+};
+
 int main()
 {
 	Dumpling::Color color = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -54,8 +63,69 @@ int main()
 	par2.name = L"UpdatePipeline";
 
 	auto index = instance->PrepareSystemNode(
-		CreateAutoSystemNode([&](Context& context, AutoComponentQuery<Form, IGHud> c_query, AutoSingletonQuery<PassDistributor> singleton) {
+		CreateAutoSystemNode([&](Context& context, AutoComponentQuery<Form, IGHud, Pipeline> c_query, AutoSingletonQuery<PassDistributor> singleton) {
 			
+
+			auto distributor = singleton.Query(context)->GetPointer<0>();
+			if (distributor == nullptr)
+				return;
+
+			c_query.Foreach(context, [=](decltype(c_query)::Data& data) -> bool {
+				
+				for (auto [form, hud, pipeline] : data)
+				{
+					if (!pipeline->clean_up_pass_index)
+					{
+						pipeline->clean_up_pass_index = distributor->GetPassIndex(MapoToufu::CleanViewTargetPass::GetPassName());
+						pipeline->imgui_pass_index = distributor->GetPassIndex(MapoToufu::IGHUDPass::GetPassName());
+						std::array<Potato::IR::StructLayout::Member, 2> init_member;
+						std::array<Potato::IR::StructLayoutObject::MemberConstruct, 2> construct;
+						auto par1 = distributor->GetParameter(pipeline->clean_up_pass_index);
+						init_member[0].struct_layout = par1->GetStructLayout();
+						construct[0].construct_operator = Potato::IR::StructLayoutObject::ConstructOperator::Copy;
+						construct[0].construct_parameter_object = const_cast<void*>(par1->GetArrayData());
+						auto par2 = distributor->GetParameter(pipeline->imgui_pass_index);
+						init_member[1].struct_layout = par2->GetStructLayout();
+						construct[1].construct_operator = Potato::IR::StructLayoutObject::ConstructOperator::Copy;
+						construct[1].construct_parameter_object = const_cast<void*>(par2->GetArrayData());
+
+						auto layout = Potato::IR::DynamicStructLayout::Create(L"PipelineParameter", std::span(init_member));
+						pipeline->parameter = Potato::IR::StructLayoutObject::Construct(layout, construct);
+						pipeline->sequence.elements.push_back({ pipeline->clean_up_pass_index, pipeline->parameter , 0});
+						pipeline->sequence.elements.push_back({ pipeline->imgui_pass_index, pipeline->parameter , 1 });
+
+					}
+
+					pipeline->color.R = Fun(pipeline->color.R, 0.2f, context.GetInstance().GetDeltaTime().count());
+					pipeline->color.G = Fun(pipeline->color.G, 0.3f, context.GetInstance().GetDeltaTime().count());
+					pipeline->color.B = Fun(pipeline->color.B, 0.4f, context.GetInstance().GetDeltaTime().count());
+					auto new_color = pipeline->color;
+					new_color.R = std::abs(new_color.R - 1.0f);
+					new_color.G = std::abs(new_color.G - 1.0f);
+					new_color.B = std::abs(new_color.B - 1.0f);
+
+					auto p1 = pipeline->parameter->TryGetArrayMemberDataWithStaticCast<MapoToufu::CleanViewTargetPass::Property>(0);
+					auto p2 = pipeline->parameter->TryGetArrayMemberDataWithStaticCast<MapoToufu::IGHUDPass::Property>(1);
+
+					p1->clean_color[0] = new_color;
+					p1->target.Clear();
+					p1->target.AddRenderTarget(*form->form_wrapper->GetAvailableRenderResource());
+					p2->target.Clear();
+					p2->target.AddRenderTarget(*form->form_wrapper->GetAvailableRenderResource());
+					p2->hud = hud->hud;
+
+					distributor->SendRequest(pipeline->sequence);
+				}
+				
+				
+				return true;
+				});
+
+
+
+
+
+			/*
 			color.R = Fun(color.R, 0.2f, context.GetInstance().GetDeltaTime().count());
 			color.G = Fun(color.G, 0.3f, context.GetInstance().GetDeltaTime().count());
 			color.B = Fun(color.B, 0.4f, context.GetInstance().GetDeltaTime().count());
@@ -111,6 +181,7 @@ int main()
 
 				distributor->SendRequest(sequ);
 			}
+			*/
 		})
 	);
 
@@ -130,6 +201,8 @@ int main()
 					auto im_hud = render->CreateIGHUD(form, &demo);
 					context.GetInstance().AddEntityComponent(*entity, std::move(form));
 					context.GetInstance().AddEntityComponent(*entity, std::move(im_hud));
+					Pipeline pipeline;
+					context.GetInstance().AddEntityComponent(*entity, std::move(pipeline));
 				}
 			}
 		),
