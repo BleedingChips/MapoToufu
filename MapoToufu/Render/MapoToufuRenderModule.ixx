@@ -7,7 +7,6 @@ import Potato;
 import Dumpling;
 import Noodles;
 import MapoToufuDefine;
-import MapoToufuInstance;
 import MapoToufuRenderPass;
 import MapoToufuRenderer;
 import MapoToufuModule;

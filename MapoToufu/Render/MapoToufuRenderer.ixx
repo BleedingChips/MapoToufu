@@ -6,13 +6,11 @@ import std;
 import Potato;
 import Dumpling;
 import Noodles;
-import MapoToufuInstance;
 import MapoToufuDefine;
-import MapoToufuRenderPass;
 
 export namespace MapoToufu
 {
-	using FormEvent = Dumpling::FormEvent;
+
 	struct Form;
 
 	struct FormEventHook : public Dumpling::FormEventHook
@@ -31,6 +29,7 @@ export namespace MapoToufu
 
 	struct Form
 	{
+		RendererResource::Ptr GetRenderTarget() const { return form_wrapper->GetAvailableRenderResource(); }
 		Dumpling::Form platform_form;
 		Dumpling::FormWrapper::Ptr form_wrapper;
 		FormEventHook::Ptr event_hook;

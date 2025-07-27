@@ -6,20 +6,21 @@ import std;
 import Potato;
 import Dumpling;
 import Noodles;
-import MapoToufuInstance;
+import MapoToufuDefine;
+import MapoToufuRenderer;
 
 export namespace MapoToufu
 {
-
-	using PassSequencer = Dumpling::PassSequencer;
-	using PassRequest = Dumpling::PassRequest;
-	using PassIndex = Dumpling::PassIndex;
-	using PassDistributor = Dumpling::PassDistributor;
-
 	struct IGHUDPass
 	{
 		struct Property
 		{
+			void SetParameter(RendererResource const& resource, IGHud const& hud)
+			{
+				target.Clear();
+				target.AddRenderTarget(resource);
+				this->hud = hud.hud;
+			}
 			Dumpling::RenderTargetSet target;
 			Dumpling::IGHeadUpDisplay::Ptr hud;
 		};
