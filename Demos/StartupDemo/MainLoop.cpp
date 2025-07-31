@@ -31,6 +31,11 @@ protected:
 	virtual void SubIGWidgetRef() const {}
 }demo;
 
+auto dying = AutoSystemNodeStatic(
+	[]() {
+		Potato::Log::Log<L"Dying">(Potato::Log::Level::Log, L"DyingSystemNode");
+	}
+);
 
 struct Pipeline
 {
@@ -55,6 +60,14 @@ int main()
 	renderer_module->Load(*instance);
 
 	auto entity = instance->CreateEntity();
+
+	auto dying_index = instance->PrepareSystemNode(
+		&dying
+	);
+
+	instance->LoadDyingSystemNode(
+		dying_index
+	);
 
 	auto thread_id = std::this_thread::get_id();
 	//renderer_module->AddFormComponent(*instance, *entity);
