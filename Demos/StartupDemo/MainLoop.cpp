@@ -65,6 +65,20 @@ int main()
 	auto index = instance->PrepareSystemNode(
 		CreateAutoSystemNode([&](Context& context, AutoComponentQuery<Form, IGHud, Pipeline> c_query, AutoSingletonQuery<PassDistributor> singleton) {
 			
+			auto history = context.GetEntityHistory();
+
+			for (auto& ite : history)
+			{
+				if (c_query.RequireMarchAll(ite.add))
+				{
+					volatile int o = 0;
+				}
+
+				if (c_query.RequireMarchSingle<IGHud>(ite.add))
+				{
+					volatile int o = 0;
+				}
+			}
 
 			auto distributor = singleton.Query(context)->GetPointer<0>();
 			if (distributor == nullptr)
