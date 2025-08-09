@@ -9,12 +9,6 @@ import Dumpling;
 
 export namespace MapoToufu
 {
-	enum class ThreadMask : std::size_t
-	{
-		MainThread = 1,
-	};
-
-	constexpr std::size_t operator*(ThreadMask mask) { return static_cast<std::size_t>(mask); }
 
 	using Noodles::AutoComponentQuery;
 	using Noodles::AutoSingletonQuery;
@@ -39,6 +33,28 @@ export namespace MapoToufu
 	using Dumpling::RendererResource;
 
 	using Potato::Pointer::IntrusivePtr;
+
+	using Potato::IR::StructLayout;
+	using Potato::IR::StructLayoutObject;
+	using Potato::IR::DynamicStructLayout;
+
+
+	enum class ThreadMask : std::size_t
+	{
+		MainThread = 1,
+	};
+
+	constexpr std::size_t operator*(ThreadMask mask) { return static_cast<std::size_t>(mask); }
+
+	enum class InstanceCategory : std::size_t
+	{
+		NormalWorld
+	};
+
+	struct InstanceConfig : Instance::Config
+	{
+		InstanceCategory category = InstanceCategory::NormalWorld;
+	};
 
 };
 

@@ -6,20 +6,30 @@ import std;
 import Potato;
 import Dumpling;
 import MapoToufuDefine;
+import MapoToufuSubModule;
 
 export namespace MapoToufu
 {
+
 	struct GameContext
 	{
-		Instance::Ptr CreatInstance(Instance::Config config = {});
-		void Loop();
+		Instance::Ptr CreatInstance(InstanceConfig config = {});
+		
+		void RunMainThreadAndWait();
+
 		bool Launch(Instance& scene);
 
 		GameContext();
 
 		auto& GetTaskContext() { return task_context; }
 
+		bool RegisterModule(SubModule const& sub_module) { return collection.AddSubModule(sub_module); }
+
 	protected:
+
+		std::shared_mutex module_mutex;
+
+		SubModuleCollection collection;
 
 		Potato::Task::Context task_context;
 	};

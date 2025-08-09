@@ -19,14 +19,14 @@ namespace MapoToufu
 		}
 	}
 
-	void GameContext::Loop()
+	void GameContext::RunMainThreadAndWait()
 	{
 		Potato::Task::ThreadProperty thread_property;
 		thread_property.acceptable_mask = static_cast<std::size_t>(ThreadMask::MainThread);
 		task_context.ExecuteContextThreadUntilNoExistTask(thread_property);
 	}
 
-	Instance::Ptr GameContext::CreatInstance(Instance::Config config)
+	Instance::Ptr GameContext::CreatInstance(InstanceConfig config)
 	{
 		auto ptr = Instance::Create(config);
 		return ptr;

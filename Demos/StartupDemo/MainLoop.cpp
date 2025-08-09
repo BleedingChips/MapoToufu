@@ -48,16 +48,18 @@ struct Pipeline
 
 int main()
 {
+
+
+
 	Dumpling::Color color = {1.0f, 1.0f, 1.0f, 1.0f};
 	Dumpling::Color new_color{ color };
 	GameContext context;
-	RendererModule::Config config;
+	RendererSubModule::Config config;
 	config.priority.layer = 1;
 	config.priority.primary_priority = 100;
-	auto renderer_module = MapoToufu::RendererModule::Create(config);
+	auto renderer_module = MapoToufu::RendererSubModule::Create(config);
+	context.RegisterModule(*renderer_module);
 	auto instance = context.CreatInstance();
-	renderer_module->Init(context);
-	renderer_module->Load(*instance);
 
 	auto entity = instance->CreateEntity();
 
@@ -82,12 +84,12 @@ int main()
 
 			for (auto& ite : history)
 			{
-				if (c_query.RequireMarchAll(ite.add))
+				if (c_query.RequireMatchAll(ite.add))
 				{
 					volatile int o = 0;
 				}
 
-				if (c_query.RequireMarchSingle<IGHud>(ite.add))
+				if (c_query.RequireMatchSingle<IGHud>(ite.add))
 				{
 					volatile int o = 0;
 				}
@@ -172,6 +174,6 @@ int main()
 	);
 
 	context.Launch(*instance);
-	context.Loop();
+	context.RunMainThreadAndWait();
 	renderer_module->Destory(context);
 }

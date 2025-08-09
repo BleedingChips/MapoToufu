@@ -1,6 +1,6 @@
 module;
 
-export module MapoToufuRenderModule;
+export module MapoToufuRenderSubModule;
 
 import std;
 import Potato;
@@ -9,7 +9,7 @@ import Noodles;
 import MapoToufuDefine;
 import MapoToufuRenderPass;
 import MapoToufuRenderer;
-import MapoToufuModule;
+import MapoToufuSubModule;
 
 export namespace MapoToufu
 {
@@ -20,11 +20,11 @@ export namespace MapoToufu
 		DoNotCare
 	};
 
-	struct RendererModule : public Module, public Potato::Task::Node
+	struct RendererSubModule : public SubModule, public Potato::Task::Node
 	{
 		static constexpr std::wstring_view module_name = L"MapoTouFuRenderer";
 
-		using Ptr = Potato::Pointer::IntrusivePtr<RendererModule, Module::Wrapper>;
+		using Ptr = IntrusivePtr<RendererSubModule, SubModule::Wrapper>;
 
 		struct Config
 		{
@@ -40,22 +40,24 @@ export namespace MapoToufu
 		//bool AddIGHUDComponent(Instance& instance, Entity& target_entity, Dumpling::IGWidget::Ptr weight = {});
 		
 		virtual void Init(GameContext& context) override;
-		virtual void Load(Instance& instance) override;
-		virtual void UnLoad(Context& context) override;
+		virtual void Destory(GameContext& context) override;
+		virtual bool ShouldLoad(Instance const& target_instance, InstanceConfig const& config) const override;
+		virtual void Load(Instance& instance, InstanceConfig const& config, SubModuleCollection const& Collection) override;
+		virtual void UnLoad(Context& context, SubModuleCollection const& Collection) override;
+		virtual StructLayout const& GetStructLayout() const override;
+
 		ThreadMask GetCreateWindowThreadMask() const { return ThreadMask::MainThread; }
 
 	protected:
 
 		virtual void TaskExecute(Potato::Task::Context& context, Parameter& parameter) override;
 
-		RendererModule(Config config);
+		RendererSubModule(Config config);
 
 		Config init_config;
 		Dumpling::Device::Ptr renderer;
 
 		std::shared_mutex event_capture_mutex;
 		std::pmr::vector<Dumpling::FormEventHook::Ptr> captures;
-
-		friend struct RendererModule;
 	};
 };

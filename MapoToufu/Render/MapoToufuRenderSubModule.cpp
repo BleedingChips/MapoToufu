@@ -1,6 +1,6 @@
 module;
 #include <cassert>
-module MapoToufuRenderModule;
+module MapoToufuRenderSubModule;
 
 import MapoToufuGameContext;
 
@@ -8,33 +8,33 @@ import MapoToufuGameContext;
 namespace MapoToufu
 {
 
-	struct RendererModuleDefaultImplement : 
-		public RendererModule, 
+	struct RendererSubModuleDefaultImplement : 
+		public RendererSubModule,
 		public Potato::IR::MemoryResourceRecordIntrusiveInterface
 	{
-		virtual void AddModuleRef() const override { MemoryResourceRecordIntrusiveInterface::AddRef(); }
-		virtual void SubModuleRef() const override { MemoryResourceRecordIntrusiveInterface::SubRef(); }
+		virtual void AddSubModuleRef() const override { MemoryResourceRecordIntrusiveInterface::AddRef(); }
+		virtual void SubSubModuleRef() const override { MemoryResourceRecordIntrusiveInterface::SubRef(); }
 		virtual void AddTaskNodeRef() const override { MemoryResourceRecordIntrusiveInterface::AddRef(); }
 		virtual void SubTaskNodeRef() const override { MemoryResourceRecordIntrusiveInterface::SubRef(); }
-		RendererModuleDefaultImplement(Potato::IR::MemoryResourceRecord record, Config config) : RendererModule(config), MemoryResourceRecordIntrusiveInterface(record) {}
+		RendererSubModuleDefaultImplement(Potato::IR::MemoryResourceRecord record, Config config) : RendererSubModule(config), MemoryResourceRecordIntrusiveInterface(record) {}
 	};
 
-	auto RendererModule::Create(Config config) -> Ptr
+	auto RendererSubModule::Create(Config config) -> Ptr
 	{
 		Dumpling::Device::InitDebugLayer();
 		auto render = Dumpling::Device::Create();
 		if (render)
 		{
-			auto re = Potato::IR::MemoryResourceRecord::Allocate<RendererModuleDefaultImplement>(config.resource);
+			auto re = Potato::IR::MemoryResourceRecord::Allocate<RendererSubModuleDefaultImplement>(config.resource);
 			if (re)
 			{
-				return new(re.Get()) RendererModuleDefaultImplement{ re, config };
+				return new(re.Get()) RendererSubModuleDefaultImplement{ re, config };
 			}
 		}
 		return {};
 	}
 
-	RendererModule::RendererModule(Config config)
+	RendererSubModule::RendererSubModule(Config config)
 		: init_config(config)
 	{
 		Dumpling::Device::InitDebugLayer();
@@ -105,7 +105,7 @@ namespace MapoToufu
 		return &commited_system;
 	}
 
-	void RendererModule::TaskExecute(Potato::Task::Context& context, Parameter& parameter)
+	void RendererSubModule::TaskExecute(Potato::Task::Context& context, Parameter& parameter)
 	{
 		while (true)
 		{
@@ -137,7 +137,7 @@ namespace MapoToufu
 		}
 	}
 
-	void RendererModule::Load(Instance& instance)
+	void RendererSubModule::Load(Instance& instance, InstanceConfig const& config, SubModuleCollection const& Collection)
 	{
 		if (renderer)
 		{
@@ -221,7 +221,7 @@ namespace MapoToufu
 		}
 	}
 
-	void RendererModule::Init(GameContext& context)
+	void RendererSubModule::Init(GameContext& context)
 	{
 		Potato::Task::Node::Parameter parameter;
 		parameter.acceptable_mask = static_cast<std::size_t>(ThreadMask::MainThread);
@@ -231,8 +231,12 @@ namespace MapoToufu
 		context.GetTaskContext().Commit(*this, parameter);
 	}
 
-	void RendererModule::UnLoad(Context& context)
+	void RendererSubModule::UnLoad(Context& context, SubModuleCollection const& Collection)
 	{
+	}
 
+	bool RendererSubModule::ShouldLoad(Instance const& target_instance, InstanceConfig const& config) const
+	{
+		return true;
 	}
 }
