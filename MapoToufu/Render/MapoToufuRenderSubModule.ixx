@@ -42,7 +42,7 @@ export namespace MapoToufu
 		virtual void Init(GameContext& context) override;
 		virtual void Destory(GameContext& context) override;
 		virtual bool ShouldLoad(Instance const& target_instance, InstanceConfig const& config) const override;
-		virtual void Load(Instance& instance, InstanceConfig const& config, SubModuleCollection const& Collection) override;
+		virtual void Load(GameContext& context,Instance& instance, InstanceConfig const& config, SubModuleCollection const& Collection) override;
 		virtual void UnLoad(Context& context, SubModuleCollection const& Collection) override;
 		virtual StructLayout const& GetStructLayout() const override;
 
@@ -59,5 +59,7 @@ export namespace MapoToufu
 
 		std::shared_mutex event_capture_mutex;
 		std::pmr::vector<Dumpling::FormEventHook::Ptr> captures;
+
+		Potato::Misc::AtomicRefCount instance_reference_count;
 	};
 };

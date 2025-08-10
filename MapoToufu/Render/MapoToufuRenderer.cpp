@@ -15,10 +15,10 @@ namespace MapoToufu
 
 		virtual FormEvent::Respond Hook(FormEvent& event) override
 		{
-			if (event.IsFormDestory())
+			if (event.IsMessage(FormMessage::CLOSE))
 			{
-				need_quit = true;
-				FormEvent::PostQuitEvent();
+				//need_quit = true;
+				return event.RespondMarkAsHooked();
 			}
 			return event.RespondMarkAsSkip();
 		}

@@ -33,7 +33,7 @@ export namespace MapoToufu
 		virtual void Init(struct GameContext& context) {}
 		virtual void Destory(GameContext& context) {}
 		virtual bool ShouldLoad(Instance const& target_instance, InstanceConfig const& config) const { return false; }
-		virtual void Load(Instance& instance, InstanceConfig const& config, SubModuleCollection const& Collection) {}
+		virtual void Load(GameContext& context, Instance& instance, InstanceConfig const& config, SubModuleCollection const& Collection) {}
 		virtual void UnLoad(Context& context, SubModuleCollection const& Collection) {}
 		virtual StructLayout const& GetStructLayout() const = 0;
 
@@ -44,24 +44,30 @@ export namespace MapoToufu
 		friend struct Wrapper;
 	};
 
+	struct SubModuleDescription
+	{
+		std::wstring_view name;
+	};
+
 	struct SubModuleCollection
 	{
 		template<typename Type>
-		Type* GetSubModule() const;
+		Potato::Pointer::ObserverPtr<SubModule> GetSubModule() const { return GetSubModule(*StructLayout::GetStatic<Type>()); }
 
-		SubModule* GetSubModule(StructLayout const& require_layuout) const;
+		Potato::Pointer::ObserverPtr<SubModule> GetSubModule(StructLayout const& require_layuout) const;
 
-		bool AddSubModule(SubModule const& sub_module);
+		bool RegisterSubModule(SubModule& sub_module, SubModuleDescription const& description = {});
 
 	protected:
 
 		struct Element
 		{
 			std::size_t hash_id;
+			StructLayout::Ptr layout;
 			SubModule::Ptr sub_module;
 		};
 
-		std::vector<Element> all_sub_module_reference;
+		std::vector<Element> sub_modules;
 
 		friend struct GameContext;
 	};

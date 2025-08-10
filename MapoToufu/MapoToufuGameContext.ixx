@@ -23,9 +23,11 @@ export namespace MapoToufu
 
 		auto& GetTaskContext() { return task_context; }
 
-		bool RegisterModule(SubModule const& sub_module) { return collection.AddSubModule(sub_module); }
+		bool RegisterModule(SubModule& sub_module) { return collection.RegisterSubModule(sub_module); }
 
 	protected:
+
+		SystemNode::Ptr EndSubModuleSystemNode();
 
 		std::shared_mutex module_mutex;
 

@@ -26,9 +26,56 @@ namespace MapoToufu
 		task_context.ExecuteContextThreadUntilNoExistTask(thread_property);
 	}
 
+	SystemNode::Ptr GameContext::EndSubModuleSystemNode()
+	{
+		static auto node = AutoSystemNodeStatic(
+			[](Context& context, AutoSingletonQuery<SubModuleCollection> instance) {
+				auto [collection] = instance.Query(context)->GetPointerTuple();
+				if (collection != nullptr)
+				{
+					for (auto& ite : collection->sub_modules)
+					{
+						ite.sub_module->UnLoad(context, *collection);
+					}
+				}
+			}
+		);
+		return &node;
+	}
+
 	Instance::Ptr GameContext::CreatInstance(InstanceConfig config)
 	{
 		auto ptr = Instance::Create(config);
+		if (ptr)
+		{
+			SubModuleCollection instance_collection;
+
+			for (auto& ite : collection.sub_modules)
+			{
+				if (ite.sub_module->ShouldLoad(*ptr, config))
+				{
+					instance_collection.RegisterSubModule(*ite.sub_module);
+				}
+			}
+
+			for (auto& ite : instance_collection.sub_modules)
+			{
+				ite.sub_module->Load(*this, *ptr, config, instance_collection);
+			}
+
+			ptr->AddSingleton(std::move(instance_collection));
+
+			Instance::SystemInfo info;
+			info.identity_name = L"MapoToufu::EndSubModuleSystemNode";
+
+			auto system_index = ptr->PrepareSystemNode(EndSubModuleSystemNode(), info, false);
+			assert(system_index);
+
+			SystemNode::Parameter par;
+			par.module_name = L"MapoToufu::GameContext::UnloadSubmodule";
+
+			ptr->LoadDyingSystemNode(system_index, par);
+		}
 		return ptr;
 	}
 

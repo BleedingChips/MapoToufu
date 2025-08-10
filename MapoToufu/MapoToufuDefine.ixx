@@ -25,6 +25,7 @@ export namespace MapoToufu
 	using EntityProperty = Noodles::EntityProperty;
 
 	using Dumpling::FormEvent;
+	using Dumpling::FormMessage;
 	using Dumpling::PassSequencer;
 	using Dumpling::PassRequest;
 	using Dumpling::PassIndex;

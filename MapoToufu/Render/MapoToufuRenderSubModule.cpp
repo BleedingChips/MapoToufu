@@ -117,27 +117,26 @@ namespace MapoToufu
 					return event.RespondMarkAsSkip();
 				}
 			);
-			if (re.has_value())
+
+			if (re.has_value() && *re)
 			{
-				if (*re)
-				{
-					continue;
-				}
-				else {
-					parameter.trigger_time =
-						std::chrono::steady_clock::now()
-						+ std::chrono::milliseconds{ parameter.custom_data.data1 };
-					context.Commit(*this, parameter);
-					return;
-				}
+				continue;
 			}
-			else {
+
+			if (instance_reference_count.Count() > 0)
+			{
+				parameter.trigger_time =
+					std::chrono::steady_clock::now()
+					+ std::chrono::milliseconds{ parameter.custom_data.data1 };
+				context.Commit(*this, parameter);
 				return;
 			}
+
+			return;
 		}
 	}
 
-	void RendererSubModule::Load(Instance& instance, InstanceConfig const& config, SubModuleCollection const& Collection)
+	void RendererSubModule::Load(GameContext& context, Instance& instance, InstanceConfig const& config, SubModuleCollection const& Collection)
 	{
 		if (renderer)
 		{
@@ -219,6 +218,15 @@ namespace MapoToufu
 				}
 			}
 		}
+		if (instance_reference_count.AddRef())
+		{
+			Potato::Task::Node::Parameter parameter;
+			parameter.acceptable_mask = static_cast<std::size_t>(ThreadMask::MainThread);
+			parameter.custom_data.data1 = 1;
+			parameter.node_name = L"MapoToufuRenderer::FormMessageLoop";
+			parameter.trigger_time = Potato::Task::TimeT::now() + std::chrono::milliseconds{ parameter.custom_data.data1 };
+			context.GetTaskContext().Commit(*this, parameter);
+		}
 	}
 
 	void RendererSubModule::Init(GameContext& context)
@@ -231,12 +239,22 @@ namespace MapoToufu
 		context.GetTaskContext().Commit(*this, parameter);
 	}
 
+	void RendererSubModule::Destory(GameContext& context)
+	{
+	}
+
 	void RendererSubModule::UnLoad(Context& context, SubModuleCollection const& Collection)
 	{
+		instance_reference_count.SubRef();
 	}
 
 	bool RendererSubModule::ShouldLoad(Instance const& target_instance, InstanceConfig const& config) const
 	{
 		return true;
+	}
+
+	StructLayout const& RendererSubModule::GetStructLayout() const
+	{
+		return *StructLayout::GetStatic<RendererSubModule>();
 	}
 }
