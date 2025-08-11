@@ -85,9 +85,11 @@ namespace MapoToufu
 								ite.need_skip_first_present = false;
 							}
 							else {
-								ite.form_wrapper->Present();
+								if(ite)
+									ite.form_wrapper->Present();
 							}
-							ite.form_wrapper->LogicPresent();
+							if(ite)
+								ite.form_wrapper->LogicPresent();
 						}
 
 						if (ite.event_hook)

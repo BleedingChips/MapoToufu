@@ -30,6 +30,7 @@ export namespace MapoToufu
 	struct Form
 	{
 		RendererResource::Ptr GetRenderTarget() const { return form_wrapper->GetAvailableRenderResource(); }
+		operator bool() const { return platform_form; }
 		Dumpling::Form platform_form;
 		Dumpling::FormWrapper::Ptr form_wrapper;
 		FormEventHook::Ptr event_hook;
