@@ -11,22 +11,7 @@ import MapoToufuRenderer;
 
 export namespace MapoToufu
 {
-	struct IGHUDPass
-	{
-		struct Property
-		{
-			void SetParameter(RendererResource const& resource, IGHud const& hud)
-			{
-				target.Clear();
-				target.AddRenderTarget(resource);
-				this->hud = hud.hud;
-			}
-			Dumpling::RenderTargetSet target;
-			Dumpling::IGHeadUpDisplay::Ptr hud;
-		};
-		static std::wstring_view GetPassName();
-		static SystemNode::Ptr GetPassSystem();
-	};
+	
 
 	struct CleanViewTargetPass
 	{

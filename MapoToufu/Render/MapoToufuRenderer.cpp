@@ -6,51 +6,7 @@ module MapoToufuRenderer;
 namespace MapoToufu
 {
 
-	struct DefaultFormEventHoot : public FormEventHook, public Potato::IR::MemoryResourceRecordIntrusiveInterface
-	{
-		using Ptr = FormEventHook::Ptr;
-
-		static Ptr Create(std::pmr::memory_resource* resource = std::pmr::get_default_resource());
-
-
-		virtual FormEvent::Respond Hook(FormEvent& event) override
-		{
-			if (event.IsMessage(FormMessage::DESTORY))
-			{
-				need_quit = true;
-			}
-			/*
-			if (event.IsMessage(FormMessage::CLOSE))
-			{
-				//need_quit = true;
-				return event.RespondMarkAsHooked();
-			}
-			*/
-			return event.RespondMarkAsSkip();
-		}
-		virtual void UpdateEventHook(Context& context, Form& form) override
-		{
-			if (need_quit)
-			{
-				context.GetInstance().RequireQuit();
-			}
-		}
-		DefaultFormEventHoot(Potato::IR::MemoryResourceRecord record) : MemoryResourceRecordIntrusiveInterface(record) {}
-		virtual void AddFormEventHookRef() const { MemoryResourceRecordIntrusiveInterface::AddRef(); }
-		virtual void SubFormEventHookRef() const { MemoryResourceRecordIntrusiveInterface::SubRef(); }
-	protected:
-		std::atomic_bool need_quit = false;
-	};
-
-	DefaultFormEventHoot::Ptr DefaultFormEventHoot::Create(std::pmr::memory_resource* resource)
-	{
-		auto re = Potato::IR::MemoryResourceRecord::Allocate<DefaultFormEventHoot>(resource);
-		if (re)
-		{
-			return new (re.Get()) DefaultFormEventHoot{ re };
-		}
-		return {};
-	}
+	
 
 	bool FrameRenderer::BeginPass(PassRenderer& pass_renderer, PassRequest const& request) const
 	{
@@ -86,5 +42,13 @@ namespace MapoToufu
 		IGHud hud;
 		hud.hud = Dumpling::IGHeadUpDisplay::Create(form.platform_form, *frame_renderer, std::move(wight));
 		return hud;
+	}
+
+	FrameRenderer::~FrameRenderer()
+	{
+		if (frame_renderer)
+		{
+			frame_renderer->FlushToLastFrame();
+		}
 	}
 }

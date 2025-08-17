@@ -154,7 +154,7 @@ int main()
 	par.name = L"FuckYou";
 	par.acceptable_mask = *renderer_module->GetCreateWindowThreadMask();
 	
-	instance->LoadOnceSystemNode(
+	auto index22 = instance->LoadOnceSystemNode(
 		CreateAutoSystemNode(
 			[](Context& context, AutoSingletonQuery<FrameRenderer const> singleton) {
 				auto render = singleton.Query(context)->GetPointer<0>();

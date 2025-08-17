@@ -26,6 +26,17 @@ namespace MapoToufu
 		task_context.ExecuteContextThreadUntilNoExistTask(thread_property);
 	}
 
+	bool GameContext::RegisterModule(SubModule& sub_module)
+	{
+		std::lock_guard lock(module_mutex);
+		if (collection.RegisterSubModule(sub_module))
+		{
+			sub_module.Init(*this);
+			return true;
+		}
+		return false;
+	}
+
 	SystemNode::Ptr GameContext::EndSubModuleSystemNode()
 	{
 		static auto node = AutoSystemNodeStatic(
@@ -50,11 +61,14 @@ namespace MapoToufu
 		{
 			SubModuleCollection instance_collection;
 
-			for (auto& ite : collection.sub_modules)
 			{
-				if (ite.sub_module->ShouldLoad(*ptr, config))
+				std::shared_lock lock(module_mutex);
+				for (auto& ite : collection.sub_modules)
 				{
-					instance_collection.RegisterSubModule(*ite.sub_module);
+					if (ite.sub_module->ShouldLoad(*ptr, config))
+					{
+						instance_collection.RegisterSubModule(*ite.sub_module);
+					}
 				}
 			}
 
