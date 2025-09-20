@@ -33,7 +33,7 @@ protected:
 
 auto dying = AutoSystemNodeStatic(
 	[]() {
-		Potato::Log::Log<L"Dying">(Potato::Log::Level::Log, L"DyingSystemNode");
+		Potato::Log::Log<"Dying">(Potato::Log::Level::Log, "DyingSystemNode");
 	}
 );
 
@@ -75,7 +75,7 @@ int main()
 	//renderer_module->AddFormComponent(*instance, *entity);
 
 	SystemNode::Parameter par2;
-	par2.name = L"UpdatePipeline";
+	par2.name = "UpdatePipeline";
 
 	auto index = instance->PrepareSystemNode(
 		CreateAutoSystemNode([&](Context& context, AutoComponentQuery<Form, IGHud, Pipeline> c_query, AutoSingletonQuery<PassDistributor> singleton) {
@@ -105,9 +105,9 @@ int main()
 				{
 					if (pipeline->sequence.GetRequireCount() == 0)
 					{
-						auto require_pass = std::array<std::wstring_view, 2>{ MapoToufu::CleanViewTargetPass::GetPassName(),MapoToufu::IGHUDPass::GetPassName() };
+						auto require_pass = std::array<std::string_view, 2>{ MapoToufu::CleanViewTargetPass::GetPassName(),MapoToufu::IGHUDPass::GetPassName() };
 						auto parameter = distributor->CreatePassRequest(
-							L"normal_pipeline",
+							"normal_pipeline",
 							require_pass,
 							pipeline->sequence
 						);
@@ -151,7 +151,7 @@ int main()
 
 	instance->LoadSystemNode(SystemCategory::Tick, index, par2);
 	SystemNode::Parameter par;
-	par.name = L"FuckYou";
+	par.name = "FuckYou";
 	par.acceptable_mask = *renderer_module->GetCreateWindowThreadMask();
 	
 	auto index22 = instance->LoadOnceSystemNode(

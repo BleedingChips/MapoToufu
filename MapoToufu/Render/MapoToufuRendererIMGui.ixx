@@ -29,7 +29,7 @@ export namespace MapoToufu
 			Dumpling::RenderTargetSet target;
 			Dumpling::IGHeadUpDisplay::Ptr hud;
 		};
-		static std::wstring_view GetPassName();
+		static std::string_view GetPassName();
 		static SystemNode::Ptr GetPassSystem();
 	};
 	

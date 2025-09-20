@@ -9,7 +9,7 @@ namespace MapoToufu
 	
 
 
-	std::wstring_view CleanViewTargetPass::GetPassName() { return L"CleanViewTargetPass:MapoToufu"; }
+	std::string_view CleanViewTargetPass::GetPassName() { return "CleanViewTargetPass:MapoToufu"; }
 
 	SystemNode::Ptr CleanViewTargetPass::GetPassSystem()
 	{

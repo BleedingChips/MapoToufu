@@ -158,7 +158,7 @@ namespace MapoToufu
 				sys_parameter.acceptable_mask = std::numeric_limits<decltype(sys_parameter.acceptable_mask)>::max();
 
 				{
-					sys_parameter.name = L"MapoToufuRenderer::Wait";
+					sys_parameter.name = "MapoToufuRenderer::Wait";
 					sys_parameter.priority.third = std::numeric_limits<decltype(sys_parameter.priority.second)>::max() - 1;
 					
 					auto exe_index = instance.LoadSystemNode(SystemCategory::Tick, wait_sys_index, sys_parameter);
@@ -166,7 +166,7 @@ namespace MapoToufu
 				}
 
 				{
-					sys_parameter.name = L"MapoToufuRenderer::Commite";
+					sys_parameter.name = "MapoToufuRenderer::Commite";
 					sys_parameter.priority.third = std::numeric_limits<decltype(sys_parameter.priority.second)>::max();
 
 					auto exe_index = instance.LoadSystemNode(SystemCategory::Tick, commited_sys_index, sys_parameter);
@@ -225,7 +225,7 @@ namespace MapoToufu
 			Potato::Task::Node::Parameter parameter;
 			parameter.acceptable_mask = static_cast<std::size_t>(ThreadMask::MainThread);
 			parameter.custom_data.data1 = 1;
-			parameter.node_name = L"MapoToufuRenderer::FormMessageLoop";
+			parameter.node_name = "MapoToufuRenderer::FormMessageLoop";
 			parameter.trigger_time = Potato::Task::TimeT::now() + std::chrono::milliseconds{ parameter.custom_data.data1 };
 			context.GetTaskContext().Commit(*this, parameter);
 		}
@@ -236,7 +236,7 @@ namespace MapoToufu
 		Potato::Task::Node::Parameter parameter;
 		parameter.acceptable_mask = static_cast<std::size_t>(ThreadMask::MainThread);
 		parameter.custom_data.data1 = 1;
-		parameter.node_name = L"MapoToufuRenderer::FormMessageLoop";
+		parameter.node_name = "MapoToufuRenderer::FormMessageLoop";
 		parameter.trigger_time = Potato::Task::TimeT::now() + std::chrono::milliseconds{ parameter.custom_data.data1 };
 		context.GetTaskContext().Commit(*this, parameter);
 	}

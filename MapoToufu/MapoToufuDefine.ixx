@@ -37,7 +37,6 @@ export namespace MapoToufu
 
 	using Potato::IR::StructLayout;
 	using Potato::IR::StructLayoutObject;
-	using Potato::IR::DynamicStructLayout;
 
 
 	enum class ThreadMask : std::size_t
