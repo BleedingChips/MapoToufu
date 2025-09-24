@@ -37,7 +37,7 @@ export namespace MapoToufu
 		Dumpling::Form::Rectangle rectangle;
 		Dumpling::FormStyle::Ptr style = Dumpling::FormStyle::GetFixedStyle();
 		FormEventHook::Ptr event_hook;
-		char const* title = "MapoToufu Form";
+		std::u8string_view title = u8"MapoToufu Form";
 	};
 
 	struct Form

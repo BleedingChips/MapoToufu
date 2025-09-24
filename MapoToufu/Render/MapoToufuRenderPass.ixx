@@ -20,7 +20,7 @@ export namespace MapoToufu
 			Dumpling::RenderTargetSet target;
 			std::array<Dumpling::Color, Dumpling::RenderTargetSet::max_render_target_count> clean_color;
 		};
-		static std::string_view GetPassName();
+		static std::u8string_view GetPassName();
 		static SystemNode::Ptr GetPassSystem();
 	};
 	

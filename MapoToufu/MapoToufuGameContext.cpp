@@ -80,13 +80,13 @@ namespace MapoToufu
 			ptr->AddSingleton(std::move(instance_collection));
 
 			Instance::SystemInfo info;
-			info.identity_name = "MapoToufu::EndSubModuleSystemNode";
+			info.identity_name = u8"MapoToufu::EndSubModuleSystemNode";
 
 			auto system_index = ptr->PrepareSystemNode(EndSubModuleSystemNode(), info, false);
 			assert(system_index);
 
 			SystemNode::Parameter par;
-			par.module_name = "MapoToufu::GameContext::UnloadSubmodule";
+			par.module_name = u8"MapoToufu::GameContext::UnloadSubmodule";
 
 			ptr->LoadDyingSystemNode(system_index, par);
 		}

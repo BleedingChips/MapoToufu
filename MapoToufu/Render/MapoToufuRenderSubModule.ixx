@@ -22,7 +22,7 @@ export namespace MapoToufu
 
 	struct RendererSubModule : public SubModule, public Potato::Task::Node
 	{
-		static constexpr std::string_view module_name = "MapoTouFuRenderer";
+		static constexpr std::u8string_view module_name = u8"MapoTouFuRenderer";
 
 		using Ptr = IntrusivePtr<RendererSubModule, SubModule::Wrapper>;
 

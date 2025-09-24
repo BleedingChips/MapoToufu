@@ -75,7 +75,7 @@ int main()
 	//renderer_module->AddFormComponent(*instance, *entity);
 
 	SystemNode::Parameter par2;
-	par2.name = "UpdatePipeline";
+	par2.name = u8"UpdatePipeline";
 
 	auto index = instance->PrepareSystemNode(
 		CreateAutoSystemNode([&](Context& context, AutoComponentQuery<Form, IGHud, Pipeline> c_query, AutoSingletonQuery<PassDistributor> singleton) {
@@ -105,9 +105,12 @@ int main()
 				{
 					if (pipeline->sequence.GetRequireCount() == 0)
 					{
-						auto require_pass = std::array<std::string_view, 2>{ MapoToufu::CleanViewTargetPass::GetPassName(),MapoToufu::IGHUDPass::GetPassName() };
+						auto require_pass = std::array<std::u8string_view, 2>{ 
+							MapoToufu::CleanViewTargetPass::GetPassName(),
+							MapoToufu::IGHUDPass::GetPassName() 
+						};
 						auto parameter = distributor->CreatePassRequest(
-							"normal_pipeline",
+							u8"normal_pipeline",
 							require_pass,
 							pipeline->sequence
 						);
@@ -130,8 +133,8 @@ int main()
 						new_color.G = std::abs(new_color.G - 1.0f);
 						new_color.B = std::abs(new_color.B - 1.0f);
 
-						auto p1 = pipeline->parameter->TryGetArrayMemberDataWithStaticCast<MapoToufu::CleanViewTargetPass::Property>(0);
-						auto p2 = pipeline->parameter->TryGetArrayMemberDataWithStaticCast<MapoToufu::IGHUDPass::Property>(1);
+						auto p1 = pipeline->parameter->TryGetMemberDataWithStaticCast<MapoToufu::CleanViewTargetPass::Property>(0);
+						auto p2 = pipeline->parameter->TryGetMemberDataWithStaticCast<MapoToufu::IGHUDPass::Property>(1);
 
 						p1->clean_color[0] = new_color;
 						p1->target.Clear();
@@ -151,7 +154,7 @@ int main()
 
 	instance->LoadSystemNode(SystemCategory::Tick, index, par2);
 	SystemNode::Parameter par;
-	par.name = "FuckYou";
+	par.name = u8"FuckYou";
 	par.acceptable_mask = *renderer_module->GetCreateWindowThreadMask();
 	
 	auto index22 = instance->LoadOnceSystemNode(

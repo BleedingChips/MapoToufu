@@ -6,7 +6,7 @@ import MapoToufuRenderer;
 
 namespace MapoToufu
 {
-	std::string_view IGHUDPass::GetPassName() { return "IGHUDPass:MapoToufu"; }
+	std::u8string_view IGHUDPass::GetPassName() { return u8"IGHUDPass:MapoToufu"; }
 	SystemNode::Ptr IGHUDPass::GetPassSystem()
 	{
 		static auto system = AutoSystemNodeStatic(
